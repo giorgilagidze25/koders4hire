@@ -9,6 +9,7 @@ import SignUp from './components/SignUp';
 import Header from './components/Heder';
 import Home from './components/Home';
 import Profile from './components/Profile';
+import CardDetail from './components/CardDetail';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -28,6 +29,7 @@ function App() {
         <Header darkMode={darkMode} setDarkMode={setDarkMode} />
         <Routes>
           <Route path="/" element={<Home darkMode={darkMode} />} />
+             <Route path="/card/:id" element={<CardDetail />} />
           <Route path="/signup" element={<SignUp darkMode={darkMode} />} />
           <Route path="/login" element={<LogIn darkMode={darkMode} />} />
 

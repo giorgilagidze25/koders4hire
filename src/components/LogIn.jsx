@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 
 export default function LogIn({ darkMode }) {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const navigate = useNavigate();
+  const location = useLocation();
+
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const tokenFromQuery = params.get('token');
+  if (tokenFromQuery) {
+    Cookies.set('token', tokenFromQuery, { expires: 7 });
+    toast.success('Token set from URL');
+    navigate('/'); 
+  }
+}, [location.search, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -35,7 +46,8 @@ export default function LogIn({ darkMode }) {
           isLoading: false,
           autoClose: 3000,
         });
-        setTimeout(() => navigate('/profile'), 3000);
+       setTimeout(() => navigate(`/login?token=${data.token}`), 3000);
+
       } else {
         toast.update(loadingToast, {
           render: data.error || data.message || 'Login failed',
@@ -60,7 +72,10 @@ export default function LogIn({ darkMode }) {
 
   return (
     <div className={`min-h-screen flex justify-center items-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
-      <form onSubmit={handleSubmit} className={`w-[400px] p-6 rounded-lg shadow-lg space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <form
+        onSubmit={handleSubmit}
+        className={`w-[400px] p-6 rounded-lg shadow-lg space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+      >
         <h2 className="text-2xl font-bold text-center">შესვლა</h2>
 
         <div>
@@ -81,7 +96,7 @@ export default function LogIn({ darkMode }) {
           <input
             name="password"
             type="password"
-            placeholder="*******"
+            placeholder="*****"
             value={formData.password}
             onChange={handleChange}
             required
@@ -89,7 +104,10 @@ export default function LogIn({ darkMode }) {
           />
         </div>
 
-        <button type="submit" className={`w-full py-2 rounded ${darkMode ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}>
+        <button
+          type="submit"
+          className={`w-full py-2 rounded ${darkMode ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+        >
           შესვლა
         </button>
 
@@ -113,7 +131,10 @@ export default function LogIn({ darkMode }) {
 
         <p className="text-center mt-4 text-sm">
           ჯერ არ გაქვს ანგარიში?{' '}
-          <span onClick={() => navigate('/signup')} className="underline cursor-pointer hover:opacity-80">
+          <span
+            onClick={() => navigate('/signup')}
+            className="underline cursor-pointer hover:opacity-80"
+          >
             რეგისტრაცია
           </span>
         </p>
