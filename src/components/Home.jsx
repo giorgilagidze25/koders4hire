@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { CheckCircle } from "lucide-react";
 import data from "./data";
+import { useCart } from "../context/CartContext"; // Import useCart
 
 export default function Home({ darkMode }) {
   const [services, setServices] = useState([]);
@@ -17,6 +18,7 @@ export default function Home({ darkMode }) {
   });
 
   const token = Cookies.get("token");
+  const { addToCart } = useCart(); // Get addToCart function from context
 
   useEffect(() => {
     fetch("https://api.k4h.dev/services")
@@ -158,6 +160,12 @@ export default function Home({ darkMode }) {
                     className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                   >
                     წაშლა
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+                    onClick={() => addToCart(service)}
+                  >
+                    კარტაში დამატება
                   </button>
                 </div>
               </div>

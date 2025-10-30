@@ -52,7 +52,7 @@ export default function Header({ darkMode, setDarkMode }) {
                 <ShoppingCart className="w-6 h-6 text-gray-700 dark:text-gray-200" />
                 {cart.length > 0 && (
                   <span className="absolute top-0 right-0 text-xs font-bold bg-red-600 text-white w-4 h-4 rounded-full flex items-center justify-center">
-                    {cart.length}
+                    {cart.reduce((acc, item) => acc + item.quantity, 0)}
                   </span>
                 )}
               </button>
@@ -63,19 +63,43 @@ export default function Header({ darkMode, setDarkMode }) {
                     <p className="text-center">კარტი ცარიელია</p>
                   ) : (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {cart.map((item) => (
+                      {cart.reduce((acc, item) => {
+                        const existingItem = acc.find(i => i.product._id === item.product._id);
+                        if (existingItem) {
+                          existingItem.quantity += item.quantity;
+                        } else {
+                          acc.push({ ...item });
+                        }
+                        return acc;
+                      }, []).map((item) => (
                         <div key={item.product._id} className="flex justify-between items-center border-b pb-1">
                           <div>
                             <p className="font-semibold">{item.product.title}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-300">{item.product.price} {item.product.currency}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-300">{item.product.price}{" "}
+                              {item.product.currency === "USD"
+                                ? "$"
+                                : item.product.currency === "EUR"
+                                ? "€"
+                                : item.product.currency}
+                            </p>
                           </div>
-                          <input
-                            type="number"
-                            min="0"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.product._id, parseInt(e.target.value))}
-                            className="w-12 p-1 text-center rounded border"
-                          />
+                          <div className="flex items-center">
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.quantity}
+                              onChange={(e) => updateQuantity(item.product._id, parseInt(e.target.value))}
+                              className="w-12 p-1 text-center rounded border"
+                            />
+                            <button
+                              onClick={() => {
+                                clearCart(item.product._id);
+                              }}
+                              className="ml-2 text-red-600 hover:text-red-800"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       ))}
                       <button
@@ -90,15 +114,28 @@ export default function Header({ darkMode, setDarkMode }) {
               )}
             </div>
           )}
-
-          {isLoggedIn && (
+  {isLoggedIn && (
             <div className="relative">
               <button onClick={() => setOpenDropdown(openDropdown === "inbox" ? null : "inbox")} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                 <Bell className="w-6 h-6 text-gray-700 dark:text-gray-200" />
               </button>
               {openDropdown === "inbox" && (
                 <div className={`absolute right-0 mt-2 w-96 h-96 border rounded shadow-lg z-50 ${darkMode ? "bg-gray-900" : "bg-white"}`}>
-                  <iframe src={`https://api.k4h.dev/inbox?token=${token}`} title="Inbox Widget" className="w-full h-full border-0" />
+                  <div className="p-4">
+                    <h2 className="font-bold">Notifications</h2>
+                    <ul>
+                      {async () => {
+                        const res = await fetch(`https://api.k4h.dev/notifications?token=${token}`);
+                        const data = await res.json();
+                        return data.notifications.map(notification => (
+                          <li key={notification._id} className="border-b py-2">
+                            <p>{notification.message}</p>
+                            <p className="text-sm text-gray-500">{new Date(notification.createdAt).toLocaleString()}</p>
+                          </li>
+                        ));
+                      }}
+                    </ul>
+                  </div>
                 </div>
               )}
             </div>
