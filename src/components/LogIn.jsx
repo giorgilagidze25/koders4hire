@@ -47,7 +47,7 @@ export default function LogIn({ darkMode }) {
       const data = await response.json();
 
       if (response.ok && data.token) {
-        Cookies.set('token', data.token, { expires: 7 }); // 7 days
+        Cookies.set('token', data.token, { expires: 7 });
 
         toast.update(loadingToast, {
           render: 'Login successful!',
@@ -129,33 +129,28 @@ export default function LogIn({ darkMode }) {
           />
         </div>
 
-        <button
-          type="submit"
-          className={`w-full py-2 rounded ${
-            darkMode
-              ? 'bg-white text-black hover:bg-gray-200'
-              : 'bg-black text-white hover:bg-gray-800'
-          }`}
-        >
-          შესვლა
-        </button>
 
         <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => handleOAuth('google')}
-            className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Google-ით შესვლა
-          </button>
+<button
+  type="button"
+  onClick={() => handleOAuth('google')}
+  className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center gap-2"
+>
+  <img src="https://res.cloudinary.com/dyuabsnoo/image/upload/v1761916007/image-removebg-preview_rpkgyi.png" alt="Google" className="w-5 h-5" />
+  Google-ით შესვლა
+</button>
 
-          <button
-            type="button"
-            onClick={() => handleOAuth('github')}
-            className="w-full py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
-          >
-            GitHub-ით შესვლა
-          </button>
+<button
+  type="button"
+  onClick={() => handleOAuth('github')}
+  className="w-full py-2 bg-gray-800 text-white rounded hover:bg-gray-900 flex items-center justify-center gap-2"
+          title='GitHub authentication will set your type as developer'
+
+>
+  <img src="https://res.cloudinary.com/dyuabsnoo/image/upload/v1761916318/github_twuaar.png" alt="GitHub" className="w-5 h-5" />
+  GitHub-ით შესვლა
+</button>
+
         </div>
 
         <p className="text-center mt-4 text-sm">
