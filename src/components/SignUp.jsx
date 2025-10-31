@@ -14,10 +14,7 @@ export default function SignUp({ darkMode }) {
 
   const navigate = useNavigate();
 
-  const detectToken = () => {
-    return !!Cookies.get('token');
-  };
-
+  const detectToken = () => !!Cookies.get('token');
   const hasToken = detectToken();
 
   useEffect(() => {
@@ -28,16 +25,25 @@ export default function SignUp({ darkMode }) {
   }, [hasToken, navigate]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleOAuth = (provider) => {
+    let oauthUrl = '';
+    if (provider === 'google') {
+      oauthUrl =
+        formData.user_type === 'developer'
+          ? 'https://api.k4h.dev/auth/google?t=developer'
+          : 'https://api.k4h.dev/auth/google';
+    } else if (provider === 'github') {
+      oauthUrl = 'https://api.k4h.dev/auth/github';
+    }
+    window.location.href = oauthUrl;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const loadingToast = toast.loading('Registering...');
-
     try {
       const response = await fetch('https://api.k4h.dev/auth/signup', {
         method: 'POST',
@@ -74,19 +80,13 @@ export default function SignUp({ darkMode }) {
     }
   };
 
-  if (hasToken) return null; 
+  if (hasToken) return null;
 
   return (
-    <div
-      className={`min-h-screen flex justify-center items-center ${
-        darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'
-      }`}
-    >
+    <div className={`min-h-screen flex justify-center items-center ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
       <form
         onSubmit={handleSubmit}
-        className={`w-[400px] p-6 rounded-lg shadow-lg space-y-4 ${
-          darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}
+        className={`w-[400px] p-6 rounded-lg shadow-lg space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
       >
         <h2 className="text-2xl font-bold text-center">რეგისტრაცია</h2>
 
@@ -98,11 +98,7 @@ export default function SignUp({ darkMode }) {
             value={formData.real_name}
             onChange={handleChange}
             required
-            className={`border p-2 w-full rounded ${
-              darkMode
-                ? 'border-gray-600 bg-gray-700 text-white'
-                : 'border-gray-300'
-            }`}
+            className={`border p-2 w-full rounded ${darkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
           />
         </div>
 
@@ -114,11 +110,7 @@ export default function SignUp({ darkMode }) {
             value={formData.username}
             onChange={handleChange}
             required
-            className={`border p-2 w-full rounded ${
-              darkMode
-                ? 'border-gray-600 bg-gray-700 text-white'
-                : 'border-gray-300'
-            }`}
+            className={`border p-2 w-full rounded ${darkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
           />
         </div>
 
@@ -131,11 +123,7 @@ export default function SignUp({ darkMode }) {
             value={formData.email}
             onChange={handleChange}
             required
-            className={`border p-2 w-full rounded ${
-              darkMode
-                ? 'border-gray-600 bg-gray-700 text-white'
-                : 'border-gray-300'
-            }`}
+            className={`border p-2 w-full rounded ${darkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
           />
         </div>
 
@@ -148,11 +136,7 @@ export default function SignUp({ darkMode }) {
             value={formData.password}
             onChange={handleChange}
             required
-            className={`border p-2 w-full rounded ${
-              darkMode
-                ? 'border-gray-600 bg-gray-700 text-white'
-                : 'border-gray-300'
-            }`}
+            className={`border p-2 w-full rounded ${darkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
           />
         </div>
 
@@ -163,11 +147,7 @@ export default function SignUp({ darkMode }) {
             value={formData.user_type}
             onChange={handleChange}
             required
-            className={`border p-2 w-full rounded ${
-              darkMode
-                ? 'border-gray-600 bg-gray-700 text-white'
-                : 'border-gray-300'
-            }`}
+            className={`border p-2 w-full rounded ${darkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'}`}
           >
             <option value="user">მომხმარებელი</option>
             <option value="developer">დეველოპერი</option>
@@ -176,24 +156,44 @@ export default function SignUp({ darkMode }) {
 
         <button
           type="submit"
-          className={`w-full py-2 rounded ${
-            darkMode
-              ? 'bg-white text-black hover:bg-gray-200'
-              : 'bg-black text-white hover:bg-gray-800'
-          }`}
+          className={`w-full py-2 rounded ${darkMode ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
         >
           რეგისტრაცია
         </button>
 
         <p className="text-center mt-4 text-sm">
           გაქვს ანგარიში?{' '}
-          <span
-            onClick={() => navigate('/login')}
-            className="underline cursor-pointer hover:opacity-80"
-          >
+          <span onClick={() => navigate('/login')} className="underline cursor-pointer hover:opacity-80">
             შესვლა
           </span>
         </p>
+
+        <button
+          type="button"
+          onClick={() => handleOAuth('google')}
+          className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center gap-2"
+        >
+          <img
+            src="https://res.cloudinary.com/dyuabsnoo/image/upload/v1761916007/image-removebg-preview_rpkgyi.png"
+            alt="Google"
+            className="w-5 h-5"
+          />
+          Google-ით შესვლა
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleOAuth('github')}
+          className="w-full py-2 bg-gray-800 text-white rounded hover:bg-gray-900 flex items-center justify-center gap-2"
+          title='GitHub authentication will set your type as developer'
+        >
+          <img
+            src="https://res.cloudinary.com/dyuabsnoo/image/upload/v1761916318/github_twuaar.png"
+            alt="GitHub"
+            className="w-5 h-5"
+          />
+          GitHub-ით შესვლა
+        </button>
       </form>
     </div>
   );
