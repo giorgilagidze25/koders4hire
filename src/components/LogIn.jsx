@@ -128,7 +128,16 @@ export default function LogIn({ darkMode }) {
             }`}
           />
         </div>
-
+         <button
+          type="submit"
+          className={`w-full py-2 rounded ${
+            darkMode
+              ? 'bg-white text-black hover:bg-gray-200'
+              : 'bg-black text-white hover:bg-gray-800'
+          }`}
+        >
+          შესვლა
+        </button>
 
         <div className="flex flex-col gap-2">
 <button
