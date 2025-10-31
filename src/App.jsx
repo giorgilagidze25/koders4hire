@@ -13,6 +13,7 @@ import CardDetail from './components/CardDetail';
 import Dashboard from './components/Dashboard';
 import AddService from './components/AddServis';
 import UserProfile from './components/UserCard';
+import ServiceDetail from "./components/ServicDetail.";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -66,13 +67,15 @@ function App() {
         <div className="pt-20">
           <Routes>
             <Route path="/" element={<Home darkMode={darkMode} />} />
-            <Route path="/card/:id" element={<CardDetail darkMode={darkMode} setDarkMode={setDarkMode} />} />
+            <Route path="/project/:id" element={<CardDetail darkMode={darkMode} setDarkMode={setDarkMode} />} />
             <Route path="/signup" element={<SignUp darkMode={darkMode} />} />
             <Route path="/login" element={<LogIn darkMode={darkMode} />} />
             <Route path="/profile" element={<ProtectedRoute><Profile darkMode={darkMode} /></ProtectedRoute>} />
             <Route path="/add-service" element={<ProtectedRoute><AddService darkMode={darkMode} /></ProtectedRoute>} />
             <Route path="/user/:username" element={<UserProfile />} />
             <Route path="/dashboard" element={<AdminProtectedRoute><Dashboard darkMode={darkMode} setDarkMode={setDarkMode} /></AdminProtectedRoute>} />
+            <Route path="/service/:id" element={<ServiceDetail darkMode={darkMode} />} />
+     
           </Routes>
         </div>
       </BrowserRouter>

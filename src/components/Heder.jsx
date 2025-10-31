@@ -154,7 +154,9 @@ export default function Header({ darkMode, setDarkMode }) {
             </div>
 
             {openDropdown === "menu" && (
-              <div className={`absolute right-0 mt-2 w-48 border rounded shadow-lg ${darkMode ? "bg-white text-black" : "bg-black text-white"}`}>
+              <div className={`absolute right-0 mt-2 border rounded shadow-lg ${
+                  darkMode ? "bg-white text-black" : "bg-black text-white"
+                }`}>
                 {isLoggedIn && user ? (
                   <>
                     <button onClick={() => { navigate('/'); setOpenDropdown(null); }} className="block px-4 py-2 w-full text-left hover:opacity-80">მთავარ გვერდზე</button>

@@ -159,7 +159,7 @@ export default function Profile({ darkMode }) {
 
       <div className="flex-1 p-6">
       {activeSection === "info" && (
-  <div className="max-w-xl p-6 rounded-2xl shadow-lg relative">
+  <div className="max-w-xl p-6 rounded-2xl  shadow-lg relative">
     <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 bg-clip-text text-transparent">User Info</h2>
     <div className="flex justify-center mb-6 relative">
       <img
@@ -202,7 +202,7 @@ export default function Profile({ darkMode }) {
         />
       </label>
     </div>
-    <div className="space-y-2 text-lg">
+    <div className="space-y-2   text-lg">
       <p><strong>Name:</strong> {user.real_name}</p>
       <p><strong>Username:</strong> {user.username}</p>
       <p><strong>Email:</strong> {user.email}</p>
