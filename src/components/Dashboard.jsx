@@ -1,218 +1,282 @@
 import React, { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 
-const COLORS = ["#FF8042", "#00C49F", "#0088FE", "#FFBB28"];
-
-export default function Dashboard({ darkMode, setDarkMode }) {
-  const [activeSection, setActiveSection] = useState("dashboard");
-  const [serviceCount, setServiceCount] = useState(0);
-  const [userCount, setUserCount] = useState(0);
-  const [pendingVerifications, setPendingVerifications] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState([]);
+export default function Profile({ darkMode }) {
+  const [user, setUser] = useState(null);
+  const [activeSection, setActiveSection] = useState("info");
   const [services, setServices] = useState([]);
-  const [modal, setModal] = useState({ show: false, type: "", id: "", message: "" });
+  const [ratings, setRatings] = useState({ averageRating: 0, totalScore: 0 });
+  const [paypal, setPaypal] = useState(null);
+  const [updateForm, setUpdateForm] = useState({ real_name: "", username: "", email: "" });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [actionType, setActionType] = useState(""); 
   const token = Cookies.get("token");
+  const sidebarColor = darkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-900";
 
   useEffect(() => {
-    const fetchRole = async () => {
-      try {
-        const req = await fetch("https://api.k4h.dev/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const res = await req.json();
-        if (!(res.role === "admin" || res.role === "owner" || res.role === "moderator")) {
-          window.location.href = "/";
-          toast.error("You are not authorized to access the dashboard.");
-        }
-      } catch {
-        window.location.href = "/";
+    if (!token) return;
+
+    const fetchProfile = async () => {
+      const res = await fetch("https://api.k4h.dev/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUser(data);
+        setUpdateForm({ real_name: data.real_name || "", username: data.username || "", email: data.email || "" });
+        setPaypal(data.paypal_account || null);
+        fetchRatings(data._id);
+        fetchServices(data.username);
       }
     };
-    fetchRole();
-  }, [token]);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchRatings = async (userId) => {
       try {
-        const [servicesRes, usersRes, pendingRes] = await Promise.all([
-          fetch("https://api.k4h.dev/admin/all-services", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("https://api.k4h.dev/admin/all-users", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("https://api.k4h.dev/admin/verifications", { headers: { Authorization: `Bearer ${token}` } }),
-        ]);
-
-        const [servicesData, usersData, pendingData] = await Promise.all([
-          servicesRes.json(),
-          usersRes.json(),
-          pendingRes.json(),
-        ]);
-
-        setServiceCount(Array.isArray(servicesData) ? servicesData.length : 0);
-        setUserCount(Array.isArray(usersData) ? usersData.length : 0);
-        setPendingVerifications(Array.isArray(pendingData) ? pendingData.length : 0);
-      } catch {}
-      finally { setLoading(false); }
+        const res = await fetch(`https://api.k4h.dev/rating/user/${userId}`);
+        const data = await res.json();
+        if (res.ok) setRatings(data);
+      } catch (err) {
+        toast.error("Failed to fetch ratings");
+      }
     };
-    fetchDashboardData();
+
+    const fetchServices = async (username) => {
+      try {
+        const res = await fetch(`https://api.k4h.dev/users/${username}`);
+        const data = await res.json();
+        if (res.ok) setServices(data.services || []);
+      } catch (err) {
+        toast.error("Failed to fetch services");
+      }
+    };
+
+    fetchProfile();
   }, [token]);
 
-  const fetchUsers = async () => {
+  if (!user) {
+    return (
+      <div className="text-center mt-10 flex justify-center items-center min-h-screen">
+        იტვირთება...
+      </div>
+    );
+  }
+
+  const handleUpdate = async () => {
+    const formData = new FormData();
+    formData.append("real_name", updateForm.real_name);
+    formData.append("username", updateForm.username);
+    formData.append("email", updateForm.email);
     try {
-      const res = await fetch("https://api.k4h.dev/admin/all-users", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api.k4h.dev/users/upd", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
       const data = await res.json();
-      setUsers(Array.isArray(data) ? data : []);
-    } catch {}
+      if (res.ok) {
+        toast.success("Profile updated successfully");
+        setUser(data);
+      } else {
+        toast.error("Failed to update profile");
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    }
   };
 
-  const fetchServices = async () => {
+
+  const handlePaypalConnect = async () => {
     try {
-      const res = await fetch("https://api.k4h.dev/admin/all-services", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("https://api.k4h.dev/paypal/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ paypal_email: paypal.email, merchant_id: paypal.merchant_id }),
+      });
       const data = await res.json();
-      setServices(Array.isArray(data) ? data : []);
-    } catch {}
+      if (res.ok) {
+        toast.success("PayPal connected successfully");
+        setPaypal(data);
+      } else {
+        toast.error(data.message || "Failed to connect PayPal");
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    }
   };
 
-  useEffect(() => {
-    if (activeSection === "users") fetchUsers();
-    if (activeSection === "services") fetchServices();
-  }, [activeSection]);
-
-  const confirmAction = async () => {
-    if (!modal.id) return;
-    if (modal.type === "approve") await fetch(`https://api.k4h.dev/admin/approve/${modal.id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-    else if (modal.type === "reject") await fetch(`https://api.k4h.dev/admin/reject/${modal.id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-    else if (modal.type === "delete") await fetch(`https://api.k4h.dev/admin/delservice/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    else if (modal.type === "deleteUser") await fetch(`https://api.k4h.dev/admin/deluser/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    fetchUsers(); fetchServices();
-    setModal({ show: false, type: "", id: "", message: "" });
+  const handlePaypalUpdate = async () => {
+    try {
+      const res = await fetch("https://api.k4h.dev/paypal/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ paypal_email: paypal.email, merchant_id: paypal.merchant_id }),
+      });
+      const data = await res.json();
+      if (res.ok) toast.success("PayPal updated successfully");
+      else toast.error(data.message || "Failed to update PayPal");
+    } catch (err) {
+      toast.error("An error occurred");
+    }
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen text-xl">იტვირთება მონაცემები...</div>;
-
-  const bgColor = darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900";
-  const sidebarColor = darkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-900";
-  const tableHeaderColor = darkMode ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900";
+  const handleDangerAction = async () => {
+    setShowConfirmModal(false);
+    if (actionType === "delete") {
+      try {
+        const res = await fetch("https://api.k4h.dev/users/del", {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) window.location.href = "/"; 
+      } catch (err) {
+        toast.error("Failed to delete account");
+      }
+    } else if (actionType === "disconnect-paypal") {
+      try {
+        const res = await fetch("https://api.k4h.dev/paypal/disconnect", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          toast.success("PayPal disconnected");
+          setPaypal(null);
+        }
+      } catch (err) {
+        toast.error("Failed to disconnect PayPal");
+      }
+    }
+  };
 
   return (
-    <div className={`flex flex-col md:flex-row min-h-screen ${bgColor}`}>
+    <div className={`min-h-screen flex ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}>
       <div className={`w-full md:w-64 flex flex-col p-4 md:p-6 ${sidebarColor}`}>
-        <h2 className="text-2xl font-bold mb-4 md:mb-8">Admin Panel</h2>
-        <button onClick={() => setActiveSection("dashboard")} className={`text-left py-2 ${activeSection === "dashboard" ? "text-blue-400" : ""}`}>Dashboard</button>
-        <button onClick={() => setActiveSection("users")} className={`text-left py-2 ${activeSection === "users" ? "text-blue-400" : ""}`}>Users</button>
-        <button onClick={() => setActiveSection("services")} className={`text-left py-2 ${activeSection === "services" ? "text-blue-400" : ""}`}>Services</button>
+        <h2 className="text-2xl font-bold mb-4 md:mb-8">Profile Panel</h2>
+        <button onClick={() => setActiveSection("info")} className={`text-left py-2 ${activeSection === "info" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>My Info</button>
+        <button onClick={() => setActiveSection("services")} className={`text-left py-2 ${activeSection === "services" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>My Services</button>
+        <button onClick={() => setActiveSection("paypal")} className={`text-left py-2 ${activeSection === "paypal" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>PayPal</button>
+        <button onClick={() => setActiveSection("danger")} className={`text-left py-2 ${activeSection === "danger" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Danger Zone</button>
       </div>
 
-      <main className="flex-1 p-4 md:p-6 overflow-auto">
-        {activeSection === "dashboard" && (
-          <div className="flex flex-col items-center justify-center">
-            <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: "მომხმარებლები", value: userCount },
-                    { name: "სერვისები", value: serviceCount },
-                    { name: "დადასტურება მოლოდინში", value: pendingVerifications },
-                  ]}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  label
-                >
-                  {COLORS.map((c, i) => (<Cell key={i} fill={c} />))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-6 text-lg text-center space-y-1">
-              <p>მომხმარებლები: {userCount}</p>
-              <p>სერვისები: {serviceCount}</p>
-              <p>დადასტურება მოლოდინში: {pendingVerifications}</p>
-            </div>
-          </div>
-        )}
+      <div className="flex-1 p-6">
+      {activeSection === "info" && (
+  <div className="max-w-xl p-6 rounded-2xl  shadow-lg relative">
+    <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 bg-clip-text text-transparent">User Info</h2>
+    <div className="flex justify-center mb-6 relative">
+      <img
+        src={user.profile_image}
+        alt="Profile"
+        className="w-24 h-24 rounded-full object-cover"
+      />
+      <label className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 border-2 border-white dark:border-gray-800">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z" />
+        </svg>
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("profile_image", file);
+            formData.append("real_name", updateForm.real_name);
+            formData.append("username", updateForm.username);
+            formData.append("email", updateForm.email);
+            fetch("https://api.k4h.dev/users/upd", {
+              method: "PUT",
+              headers: { Authorization: `Bearer ${token}` },
+              body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data._id) {
+                setUser(data);
+                toast.success("Profile picture updated");
+              } else {
+                toast.error("Failed to update profile picture");
+              }
+            })
+            .catch(() => toast.error("An error occurred"));
+          }}
+        />
+      </label>
+    </div>
+    <div className="space-y-2   text-lg">
+      <p><strong>Name:</strong> {user.real_name}</p>
+      <p><strong>Username:</strong> {user.username}</p>
+      <p><strong>Email:</strong> {user.email}</p>
+      <p><strong>Role:</strong> {user.user_type}</p>
+      <p><strong>Average Rating:</strong> {ratings.averageRating} ({ratings.totalScore} total)</p>
+      <button onClick={() => window.location.href = `/user/${user.username}`} className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 mt-4">
+        <p>Go to your profile</p>
+      </button>
+    </div>
+    <div className="mt-4 space-y-2">
+      <input type="text" placeholder="Real Name" value={updateForm.real_name} onChange={e => setUpdateForm({ ...updateForm, real_name: e.target.value })} className="w-full p-2 border rounded"/>
+      <input type="text" placeholder="Username" value={updateForm.username} onChange={e => setUpdateForm({ ...updateForm, username: e.target.value })} className="w-full p-2 border rounded"/>
+      <input type="email" placeholder="Email" value={updateForm.email} onChange={e => setUpdateForm({ ...updateForm, email: e.target.value })} className="w-full p-2 border rounded"/>
+      <button onClick={handleUpdate} className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mt-2">Update Info</button>
+    </div>
+  </div>
+)}
 
-        {activeSection === "users" && (
-          <div className="overflow-x-auto">
-            <h1 className="text-2xl font-bold mb-4">მომხმარებელთა მართვა</h1>
-            <table className={`min-w-full border ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-              <thead className={tableHeaderColor}>
-                <tr>
-                  <th className="py-2 px-4 border">Profile</th>
-                  <th className="py-2 px-4 border">სახელი</th>
-                  <th className="py-2 px-4 border">მომხმარებელი</th>
-                  <th className="py-2 px-4 border">ელფოსტა</th>
-                  <th className="py-2 px-4 border">User Type</th>
-                  <th className="py-2 px-4 border">Verification Status</th>
-                  <th className="py-2 px-4 border">მოქმედება</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u._id} className={`border-t ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-                    <td className="py-2 px-4 border">{u.profile_image ? <img src={u.profile_image} alt={u.username} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 bg-gray-400 rounded-full" />}</td>
-                    <td className="py-2 px-4 border">{u.real_name}</td>
-                    <td className="py-2 px-4 border">{u.username}</td>
-                    <td className="py-2 px-4 border">{u.email}</td>
-                    <td className="py-2 px-4 border">{u.user_type}</td>
-                    <td className="py-2 px-4 border">
-                      {u.user_type === "developer" ? (
-                        u.verification_status === "approved" ? <span className="text-green-500 font-semibold">მომხმარებლის მოთხოვნა დადასტურებულია</span>
-                        : u.verification_status === "rejected" ? <span className="text-red-500 font-semibold">მომხმარებლის მოთხოვნა უარყოფილია</span>
-                        : u.verification_status === "none" ? <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-600"}`}>მომხმარებელს მოთხოვნა არ გამოუგზავნია</span>
-                        : <><button onClick={() => setModal({ show: true, type: "approve", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის დადასტურება?" })} className="bg-green-600 text-white px-3 py-1 rounded mr-1">დადასტურება</button>
-                           <button onClick={() => setModal({ show: true, type: "reject", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის უარყოფა?" })} className="bg-red-600 text-white px-3 py-1 rounded">უარყოფა</button></>
-                      ) : <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-500"}`}>N/A</span>}
-                    </td>
-                    <td className="py-2 px-4 border"><button onClick={() => setModal({ show: true, type: "deleteUser", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის წაშლა?" })} className="bg-gray-600 text-white px-3 py-1 rounded">წაშლა</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
 
         {activeSection === "services" && (
-          <div className="overflow-x-auto">
-            <h1 className="text-2xl font-bold mb-4">სერვისების მართვა</h1>
-            <table className={`min-w-full border ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-              <thead className={tableHeaderColor}>
-                <tr>
-                  <th className="py-2 px-4 border">ID</th>
-                  <th className="py-2 px-4 border">დასახელება</th>
-                  <th className="py-2 px-4 border">მოქმედება</th>
-                </tr>
-              </thead>
-              <tbody>
-                {services.map(s => (
-                  <tr key={s._id} className={`border-t ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-                    <td className="py-2 px-4 border">{s._id}</td>
-                    <td className="py-2 px-4 border">{s.name || s.title || "Untitled"}</td>
-                    <td className="py-2 px-4 border"><button onClick={() => setModal({ show: true, type: "delete", id: s._id, message: "ნამდვილად გსურთ ამ სერვისის წაშლა?" })} className="bg-red-600 text-white px-3 py-1 rounded">წაშლა</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div>
+            <h2 className="text-3xl font-bold mb-6">My Services</h2>
+            {services.map(s => (
+              <div key={s._id} className="border p-4 rounded mb-4">
+                <h3 className="font-semibold">{s.title}</h3>
+                <p>{s.description}</p>
+                <p><strong>Price:</strong> {s.price} {s.currency}</p>
+                <p><strong>Average Rating:</strong> {s.averageRating || 0}</p>
+              </div>
+            ))}
           </div>
         )}
-      </main>
 
-      {modal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
-          <div className={`rounded-lg p-6 w-full max-w-sm text-center ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
-            <p className="mb-6">{modal.message}</p>
-            <div className="flex justify-around">
-              <button onClick={confirmAction} className="bg-blue-600 text-white px-4 py-2 rounded">Yes</button>
-              <button onClick={() => setModal({ show: false, type: "", id: "", message: "" })} className="bg-gray-400 text-white px-4 py-2 rounded">No</button>
+        {activeSection === "paypal" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-6">PayPal</h2>
+            {paypal ? (
+              <div className="space-y-2">
+                <p><strong>Email:</strong> {paypal.email}</p>
+                <p><strong>Merchant ID:</strong> {paypal.merchant_id}</p>
+                <p><strong>Connected At:</strong> {paypal.connected_at}</p>
+                <p><strong>Last Verified:</strong> {paypal.last_verified}</p>
+                <input type="email" value={paypal.email} onChange={e => setPaypal({ ...paypal, email: e.target.value })} className="w-full p-2 border rounded"/>
+                <input type="text" value={paypal.merchant_id} onChange={e => setPaypal({ ...paypal, merchant_id: e.target.value })} className="w-full p-2 border rounded"/>
+                <button onClick={handlePaypalUpdate} className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700">Update PayPal</button>
+              </div>
+            ) : (
+              <button onClick={handlePaypalConnect} className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700">Connect PayPal</button>
+            )}
+          </div>
+        )}
+
+        {activeSection === "danger" && (
+          <div className="space-y-4">
+            <button onClick={() => { setActionType("delete"); setShowConfirmModal(true); }} className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete Account</button>
+            {paypal && (
+              <button onClick={() => { setActionType("disconnect-paypal"); setShowConfirmModal(true); }} className="w-full py-2 bg-orange-600 text-white rounded hover:bg-orange-700">Disconnect PayPal</button>
+            )}
+          </div>
+        )}
+
+        {showConfirmModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white text-black dark:bg-gray-800 dark:text-white p-6 rounded-lg max-w-sm w-full space-y-4">
+              <p>Are you sure?</p>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 border rounded">Cancel</button>
+                <button onClick={handleDangerAction} className="px-4 py-2 bg-red-600 text-white rounded">Yes</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
