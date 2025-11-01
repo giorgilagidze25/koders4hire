@@ -26,6 +26,24 @@ export default function LogIn({ darkMode }) {
     }
   }, [location.search, navigate]);
 
+  useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const error = params.get('error');
+
+  if (error) {
+    if (error === 'invalidprovidergoogle') {
+      toast.error('This email was registered using GitHub. Please log in with GitHub or use manual login.');
+    } else if (error === 'invalidprovidergithub') {
+      toast.error('This email was registered using Google. Please log in with Google or use manual login.');
+    } else {
+      toast.error(decodeURIComponent(error));
+    }
+
+    navigate(location.pathname, { replace: true });
+  }
+}, [location.search, navigate]);
+
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -128,7 +146,8 @@ export default function LogIn({ darkMode }) {
             }`}
           />
         </div>
-         <button
+
+        <button
           type="submit"
           className={`w-full py-2 rounded ${
             darkMode
