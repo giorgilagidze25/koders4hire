@@ -156,7 +156,7 @@ export default function Home({ darkMode }) {
                       </>
                     )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); addToCart(service); }}
+                      onClick={(e) => { e.stopPropagation(); addToCart(service._id); }}
                       className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
                     >
                       კარტაში დამატება
