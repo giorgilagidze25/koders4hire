@@ -14,16 +14,15 @@ export default function Dashboard({ darkMode, setDarkMode }) {
   const [users, setUsers] = useState([]);
   const [services, setServices] = useState([]);
   const [modal, setModal] = useState({ show: false, type: "", id: "", message: "" });
+  const [openDropdown, setOpenDropdown] = useState(null); 
   const token = Cookies.get("token");
 
   useEffect(() => {
     const fetchRole = async () => {
       try {
-        const req = await fetch("https://api.k4h.dev/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const res = await req.json();
-        if (!(res.role === "admin" || res.role === "owner" || res.role === "moderator")) {
+        const res = await fetch("https://api.k4h.dev/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (!(data.role === "admin" || data.role === "owner" || data.role === "moderator")) {
           window.location.href = "/";
           toast.error("You are not authorized to access the dashboard.");
         }
@@ -42,13 +41,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
           fetch("https://api.k4h.dev/admin/all-users", { headers: { Authorization: `Bearer ${token}` } }),
           fetch("https://api.k4h.dev/admin/verifications", { headers: { Authorization: `Bearer ${token}` } }),
         ]);
-
-        const [servicesData, usersData, pendingData] = await Promise.all([
-          servicesRes.json(),
-          usersRes.json(),
-          pendingRes.json(),
-        ]);
-
+        const [servicesData, usersData, pendingData] = await Promise.all([servicesRes.json(), usersRes.json(), pendingRes.json()]);
         setServiceCount(Array.isArray(servicesData) ? servicesData.length : 0);
         setUserCount(Array.isArray(usersData) ? usersData.length : 0);
         setPendingVerifications(Array.isArray(pendingData) ? pendingData.length : 0);
@@ -81,12 +74,23 @@ export default function Dashboard({ darkMode, setDarkMode }) {
 
   const confirmAction = async () => {
     if (!modal.id) return;
-    if (modal.type === "approve") await fetch(`https://api.k4h.dev/admin/approve/${modal.id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-    else if (modal.type === "reject") await fetch(`https://api.k4h.dev/admin/reject/${modal.id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-    else if (modal.type === "delete") await fetch(`https://api.k4h.dev/admin/delservice/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    else if (modal.type === "deleteUser") await fetch(`https://api.k4h.dev/admin/deluser/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    fetchUsers(); fetchServices();
-    setModal({ show: false, type: "", id: "", message: "" });
+    try {
+      if (modal.type === "approve")
+        await fetch(`https://api.k4h.dev/admin/approve/${modal.id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      else if (modal.type === "reject")
+        await fetch(`https://api.k4h.dev/admin/reject/${modal.id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      else if (modal.type === "delete")
+        await fetch(`https://api.k4h.dev/admin/delservice/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      else if (modal.type === "deleteUser")
+        await fetch(`https://api.k4h.dev/admin/deluser/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+
+      fetchUsers();
+      fetchServices();
+    } catch {
+      toast.error("Action failed");
+    } finally {
+      setModal({ show: false, type: "", id: "", message: "" });
+    }
   };
 
   if (loading) return <div className="flex justify-center items-center h-screen text-xl">იტვირთება მონაცემები...</div>;
@@ -155,21 +159,66 @@ export default function Dashboard({ darkMode, setDarkMode }) {
               <tbody>
                 {users.map(u => (
                   <tr key={u._id} className={`border-t ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-                    <td className="py-2 px-4 border">{u.profile_image ? <img src={u.profile_image} alt={u.username} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 bg-gray-400 rounded-full" />}</td>
+                    <td className="py-2 px-4 border">
+                      {u.profile_image ? <img src={u.profile_image} alt={u.username} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 bg-gray-400 rounded-full" />}
+                    </td>
                     <td className="py-2 px-4 border">{u.real_name}</td>
                     <td className="py-2 px-4 border">{u.username}</td>
                     <td className="py-2 px-4 border">{u.email}</td>
-                    <td className="py-2 px-4 border">{u.user_type}</td>
+
+                    <td className="py-2 px-4 border relative">
+                      {openDropdown === u._id ? (
+                        <select
+                          value={u.user_type}
+                          onChange={async (e) => {
+                            const newRole = e.target.value;
+                            if (newRole === u.user_type) return;
+                            try {
+                              await fetch(`https://api.k4h.dev/admin/usertype/${u._id}`, {
+                                method: "PATCH",
+                                headers: {
+                                  Authorization: `Bearer ${token}`,
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ newRole }),
+                              });
+                              fetchUsers();
+                              setOpenDropdown(null);
+                              toast.success("User role updated");
+                            } catch {
+                              toast.error("Failed to update role");
+                            }
+                          }}
+                          onBlur={() => setOpenDropdown(null)}
+                          autoFocus
+                          className="border rounded px-2 py-1 w-full"
+                        >
+                          <option value="developer" disabled={u.user_type === "developer"}>Developer</option>
+                          <option value="user" disabled={u.user_type === "user"}>User</option>
+                        </select>
+                      ) : (
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => setOpenDropdown(u._id)}
+                        >
+                          {u.user_type}
+                        </span>
+                      )}
+                    </td>
+
                     <td className="py-2 px-4 border">
                       {u.user_type === "developer" ? (
                         u.verification_status === "approved" ? <span className="text-green-500 font-semibold">მომხმარებლის მოთხოვნა დადასტურებულია</span>
                         : u.verification_status === "rejected" ? <span className="text-red-500 font-semibold">მომხმარებლის მოთხოვნა უარყოფილია</span>
                         : u.verification_status === "none" ? <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-600"}`}>მომხმარებელს მოთხოვნა არ გამოუგზავნია</span>
                         : <><button onClick={() => setModal({ show: true, type: "approve", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის დადასტურება?" })} className="bg-green-600 text-white px-3 py-1 rounded mr-1">დადასტურება</button>
-                           <button onClick={() => setModal({ show: true, type: "reject", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის უარყოფა?" })} className="bg-red-600 text-white px-3 py-1 rounded">უარყოფა</button></>
+                          <button onClick={() => setModal({ show: true, type: "reject", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის უარყოფა?" })} className="bg-red-600 text-white px-3 py-1 rounded">უარყოფა</button></>
                       ) : <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-500"}`}>N/A</span>}
                     </td>
-                    <td className="py-2 px-4 border"><button onClick={() => setModal({ show: true, type: "deleteUser", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის წაშლა?" })} className="bg-gray-600 text-white px-3 py-1 rounded">წაშლა</button></td>
+
+                    <td className="py-2 px-4 border flex flex-col space-y-1">
+                      <button onClick={() => setModal({ show: true, type: "deleteUser", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის წაშლა?" })} className="bg-gray-600 text-white px-3 py-1 rounded">წაშლა</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
