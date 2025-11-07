@@ -107,6 +107,8 @@ export default function Home({ darkMode }) {
     }
   };
 
+  const canAddToCart = currentUser && currentUser._id !== service.owner?._id;
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-black"}`}>
       <section className="max-w-screen-xl mx-auto px-6 py-16">
@@ -148,19 +150,22 @@ export default function Home({ darkMode }) {
                           განახლება
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(service._id); }}
+                          onClick={(e) => { e.stopPropagation(); addToCart(service._id); }}
                           className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                         >
                           წაშლა
                         </button>
                       </>
                     )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); addToCart(service._id); }}
-                      className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
-                    >
-                      კარტაში დამატება
-                    </button>
+           {canAddToCart && (
+            <button
+              onClick={(e) => { e.stopPropagation(); addToCart(service._id); }}
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+            >
+              კარტაში დამატება
+           </button>
+           )}
+
                   </div>
                 </div>
               );
