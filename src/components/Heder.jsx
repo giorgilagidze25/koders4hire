@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Sun, Moon, User, Bell, ShoppingCart } from "lucide-react";
@@ -10,7 +10,7 @@ export default function Header({ darkMode, setDarkMode }) {
   const navigate = useNavigate();
   const token = Cookies.get("token");
   const isLoggedIn = !!token;
-  const { cart, updateQuantity, clearCart } = useCart();
+  const { cart, updateQuantity, clearCart, removeFromCart } = useCart();
 
   useEffect(() => {
     if (!token) return;
@@ -32,6 +32,17 @@ export default function Header({ darkMode, setDarkMode }) {
     Cookies.remove("token");
     navigate("/login");
   };
+
+  const handleCheckout = async () => {
+    const req = await fetch("https://api.k4h.dev/redirect", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const res = await req.json();
+    if (req.ok) {
+      window.location.href = res.checkout_url;
+    }
+  }
 
   return (
     <div className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${darkMode ? "bg-gray-900 shadow-lg" : "bg-white shadow-md"}`}>
@@ -93,7 +104,7 @@ export default function Header({ darkMode, setDarkMode }) {
                             />
                             <button
                               onClick={() => {
-                                clearCart(item.product._id);
+                                removeFromCart(item.product._id);
                               }}
                               className="ml-2 text-red-600 hover:text-red-800"
                             >
@@ -102,6 +113,11 @@ export default function Header({ darkMode, setDarkMode }) {
                           </div>
                         </div>
                       ))}
+                      <button
+                      onClick={handleCheckout}
+                        className="mt-2 w-full py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                        Checkout
+                      </button>
                       <button
                         onClick={clearCart}
                         className="mt-2 w-full py-2 bg-red-600 text-white rounded hover:bg-red-700"
