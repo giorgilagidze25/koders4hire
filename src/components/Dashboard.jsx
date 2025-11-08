@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 const COLORS = ["#FF8042", "#00C49F", "#0088FE", "#FFBB28"];
 
 const allowedRoles = [
+  "owner", "admin", "moderator",
   "client",
   "backend", "frontend", "fullstack",
   "rust", "cpp", "cs", "systems-developer", "embedded-developer", "firmware-developer", "device-driver-developer", "kernel-developer",
@@ -116,13 +117,18 @@ export default function Dashboard({ darkMode, setDarkMode }) {
 
   const updateUserType = async (userId, newType) => {
     try {
-      await fetch(`https://api.k4h.dev/admin/usertype/${userId}`, {
+      const request = await fetch(`https://api.k4h.dev/admin/usertype/${userId}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ newType })
       });
       await fetchUsers();
-      toast.success("User type updated");
+      const response = request.json();
+      if (request.ok) {
+        toast.success("User type updated");
+      } else {
+        toast.error(response.error || "Failed to update user type");
+      }
     } catch {
       toast.error("Failed to update user type");
     } finally {
@@ -132,13 +138,18 @@ export default function Dashboard({ darkMode, setDarkMode }) {
 
   const updateRole = async (userId, newRole) => {
     try {
-      await fetch(`https://api.k4h.dev/admin/userrole/${userId}`, {
+     const request= await fetch(`https://api.k4h.dev/admin/userrole/${userId}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ newRole })
       });
-      await fetchUsers();
-      toast.success("Role updated");
+      await fetchUsers();      
+      const response = request.json();
+      if (request.ok) {
+        toast.success("User role updated");
+      } else {
+        toast.error(response.error || "Failed to update user type");
+      }
     } catch {
       toast.error("Failed to update role");
     } finally {
