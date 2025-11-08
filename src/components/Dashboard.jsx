@@ -5,6 +5,26 @@ import { toast } from "react-toastify";
 
 const COLORS = ["#FF8042", "#00C49F", "#0088FE", "#FFBB28"];
 
+const allowedRoles = [
+  "client",
+  "backend", "frontend", "fullstack",
+  "rust", "cpp", "cs", "systems-developer", "embedded-developer", "firmware-developer", "device-driver-developer", "kernel-developer",
+  "web-developer",
+  "mobile-developer", "ios-developer", "android-developer", "flutter-developer", "react-native-developer",
+  "game-developer", "graphics-programmer", "unity-developer", "unreal-developer", "vr-developer", "ar-developer",
+  "devops-engineer", "site-reliability-engineer", "cloud-engineer", "infrastructure-engineer", "platform-engineer", "release-engineer",
+  "data-engineer", "data-scientist", "ml-engineer", "ai-engineer", "deep-learning-engineer", "nlp-engineer", "cv-engineer", "mleops-engineer", "big-data-developer", "data-visualization-developer",
+  "security-engineer", "application-security-engineer", "penetration-tester", "red-teamer", "reverse-engineer",
+  "blockchain-developer", "smart-contract-developer", "solidity-developer", "web3-developer", "dapp-developer",
+  "qa-engineer", "test-automation-engineer", "manual-tester", "performance-tester",
+  "ui-developer", "ux-developer", "graphic-designer", "ui-ux-designer", "product-designer",
+  "simulation-developer", "bioinformatics-developer", "quant-developer", "hardware-software-integration-developer", "robotics-developer", "audio-software-developer", "financial-software-developer",
+  "scripting-developer", "build-engineer", "ci-cd-engineer",
+  "no-code-developer", "low-code-developer",
+  "technical-writer", "project-manager", "product-manager", "scrum-master", "technical-support-engineer", "database-administrator", "network-engineer",
+  "vibecoder"
+];
+
 export default function Dashboard({ darkMode, setDarkMode }) {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [serviceCount, setServiceCount] = useState(0);
@@ -14,14 +34,16 @@ export default function Dashboard({ darkMode, setDarkMode }) {
   const [users, setUsers] = useState([]);
   const [services, setServices] = useState([]);
   const [modal, setModal] = useState({ show: false, type: "", id: "", message: "" });
-  const [openDropdown, setOpenDropdown] = useState(null); 
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [me, setMe] = useState(null);
   const token = Cookies.get("token");
 
   useEffect(() => {
-    const fetchRole = async () => {
+    const fetchMe = async () => {
       try {
         const res = await fetch("https://api.k4h.dev/auth/me", { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
+        setMe(data);
         if (!(data.role === "admin" || data.role === "owner" || data.role === "moderator")) {
           window.location.href = "/";
           toast.error("You are not authorized to access the dashboard.");
@@ -30,7 +52,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         window.location.href = "/";
       }
     };
-    fetchRole();
+    fetchMe();
   }, [token]);
 
   useEffect(() => {
@@ -83,7 +105,6 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         await fetch(`https://api.k4h.dev/admin/delservice/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       else if (modal.type === "deleteUser")
         await fetch(`https://api.k4h.dev/admin/deluser/${modal.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-
       fetchUsers();
       fetchServices();
     } catch {
@@ -93,11 +114,45 @@ export default function Dashboard({ darkMode, setDarkMode }) {
     }
   };
 
+  const updateUserType = async (userId, newType) => {
+    try {
+      await fetch(`https://api.k4h.dev/admin/usertype/${userId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ newType })
+      });
+      await fetchUsers();
+      toast.success("User type updated");
+    } catch {
+      toast.error("Failed to update user type");
+    } finally {
+      setOpenDropdown(null);
+    }
+  };
+
+  const updateRole = async (userId, newRole) => {
+    try {
+      await fetch(`https://api.k4h.dev/admin/userrole/${userId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ newRole })
+      });
+      await fetchUsers();
+      toast.success("Role updated");
+    } catch {
+      toast.error("Failed to update role");
+    } finally {
+      setOpenDropdown(null);
+    }
+  };
+
   if (loading) return <div className="flex justify-center items-center h-screen text-xl">იტვირთება მონაცემები...</div>;
 
   const bgColor = darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900";
   const sidebarColor = darkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-900";
   const tableHeaderColor = darkMode ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-900";
+
+  const isSelf = (userId) => me && me._id && me._id === userId;
 
   return (
     <div className={`flex flex-col md:flex-row min-h-screen ${bgColor}`}>
@@ -118,7 +173,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                   data={[
                     { name: "მომხმარებლები", value: userCount },
                     { name: "სერვისები", value: serviceCount },
-                    { name: "დადასტურება მოლოდინში", value: pendingVerifications },
+                    { name: "დადასტურება მოლოდინში", value: pendingVerifications }
                   ]}
                   dataKey="value"
                   nameKey="name"
@@ -142,9 +197,9 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         )}
 
         {activeSection === "users" && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto w-full">
             <h1 className="text-2xl font-bold mb-4">მომხმარებელთა მართვა</h1>
-            <table className={`min-w-full border ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
+            <table className={`min-w-[900px] w-full border ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
               <thead className={tableHeaderColor}>
                 <tr>
                   <th className="py-2 px-4 border">Profile</th>
@@ -152,75 +207,131 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                   <th className="py-2 px-4 border">მომხმარებელი</th>
                   <th className="py-2 px-4 border">ელფოსტა</th>
                   <th className="py-2 px-4 border">User Type</th>
+                  <th className="py-2 px-4 border">Role</th>
                   <th className="py-2 px-4 border">Verification Status</th>
                   <th className="py-2 px-4 border">მოქმედება</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
-                  <tr key={u._id} className={`border-t ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
-                    <td className="py-2 px-4 border">
-                      {u.profile_image ? <img src={u.profile_image} alt={u.username} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 bg-gray-400 rounded-full" />}
-                    </td>
-                    <td className="py-2 px-4 border">{u.real_name}</td>
-                    <td className="py-2 px-4 border">{u.username}</td>
-                    <td className="py-2 px-4 border">{u.email}</td>
-
-                    <td className="py-2 px-4 border relative">
-                      {openDropdown === u._id ? (
-                        <select
-                          value={u.user_type}
-                          onChange={async (e) => {
-                            const newRole = e.target.value;
-                            if (newRole === u.user_type) return;
-                            try {
-                              await fetch(`https://api.k4h.dev/admin/usertype/${u._id}`, {
-                                method: "PATCH",
-                                headers: {
-                                  Authorization: `Bearer ${token}`,
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({ newRole }),
-                              });
-                              fetchUsers();
-                              setOpenDropdown(null);
-                              toast.success("User role updated");
-                            } catch {
-                              toast.error("Failed to update role");
-                            }
-                          }}
-                          onBlur={() => setOpenDropdown(null)}
-                          autoFocus
-                          className="border rounded px-2 py-1 w-full"
+                {users.map((u) => {
+                  const self = isSelf(u._id);
+                  return (
+                    <tr key={u._id} className={`border-t ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
+                      <td className="py-2 px-4 border">
+                        {u.profile_image ? <img src={u.profile_image} alt={u.username} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 bg-gray-400 rounded-full" />}
+                      </td>
+                      <td className="py-2 px-4 border">{u.real_name}</td>
+                      <td className="py-2 px-4 border">{u.username}</td>
+                      <td className="py-2 px-4 border">{u.email}</td>
+                      <td className="py-2 px-4 border relative">
+                        {openDropdown && openDropdown.id === u._id && openDropdown.kind === "user_type" ? (
+                          <select
+                            defaultValue={u.user_type}
+                            onChange={async (e) => {
+                              const newType = e.target.value;
+                              if (newType === u.user_type) {
+                                setOpenDropdown(null);
+                                return;
+                              }
+                              if (self) {
+                                toast.info("You cannot change your own user type.");
+                                setOpenDropdown(null);
+                                return;
+                              }
+                              await updateUserType(u._id, newType);
+                            }}
+                            onBlur={() => setOpenDropdown(null)}
+                            autoFocus
+                            className="border rounded px-2 py-1 w-full"
+                          >
+                            <option value="developer" disabled={u.user_type === "developer"}>Developer</option>
+                            <option value="user" disabled={u.user_type === "user"}>User</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`cursor-pointer ${self ? "opacity-60 cursor-not-allowed" : ""}`}
+                            onClick={() => { if (self) return; setOpenDropdown({ id: u._id, kind: "user_type" }); }}
+                          >
+                            {u.user_type}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 border relative">
+                        {openDropdown && openDropdown.id === u._id && openDropdown.kind === "role" ? (
+                          <select
+                            defaultValue={u.role || "client"}
+                            onChange={async (e) => {
+                              const newRole = e.target.value;
+                              if ((u.role || "client") === newRole) {
+                                setOpenDropdown(null);
+                                return;
+                              }
+                              if (self) {
+                                toast.info("You cannot change your own role.");
+                                setOpenDropdown(null);
+                                return;
+                              }
+                              await updateRole(u._id, newRole);
+                            }}
+                            onBlur={() => setOpenDropdown(null)}
+                            autoFocus
+                            className="border rounded px-2 py-1 w-full max-w-xs"
+                          >
+                            {allowedRoles.map((r) => (
+                              <option key={r} value={r} disabled={(u.role || "client") === r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            className={`cursor-pointer ${self ? "opacity-60 cursor-not-allowed" : ""}`}
+                            onClick={() => { if (self) return; setOpenDropdown({ id: u._id, kind: "role" }); }}
+                          >
+                            {u.role || "client"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 border">
+                        {u.user_type === "developer" ? (
+                          u.verification_status === "approved" ? (
+                            <span className="text-green-500 font-semibold">მომხმარებლის მოთხოვნა დადასტურებულია</span>
+                          ) : u.verification_status === "rejected" ? (
+                            <span className="text-red-500 font-semibold">მომხმარებლის მოთხოვნა უარყოფილია</span>
+                          ) : u.verification_status === "none" ? (
+                            <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-600"}`}>მომხმარებელს მოთხოვნა არ გამოუგზავნია</span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => { if (self) { toast.info("You cannot approve your own verification."); return; } setModal({ show: true, type: "approve", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის დადასტურება?" }); }}
+                                className="bg-green-600 text-white px-3 py-1 rounded mr-1"
+                              >
+                                დადასტურება
+                              </button>
+                              <button
+                                onClick={() => { if (self) { toast.info("You cannot reject your own verification."); return; } setModal({ show: true, type: "reject", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის უარყოფა?" }); }}
+                                className="bg-red-600 text-white px-3 py-1 rounded"
+                              >
+                                უარყოფა
+                              </button>
+                            </>
+                          )
+                        ) : (
+                          <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-500"}`}>N/A</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 border flex flex-col space-y-1">
+                        <button
+                          onClick={() => { if (self) { toast.info("You cannot delete your own account from here."); return; } setModal({ show: true, type: "deleteUser", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის წაშლა?" }); }}
+                          className={`bg-gray-600 text-white px-3 py-1 rounded ${self ? "opacity-60 cursor-not-allowed" : ""}`}
+                          disabled={self}
                         >
-                          <option value="developer" disabled={u.user_type === "developer"}>Developer</option>
-                          <option value="user" disabled={u.user_type === "user"}>User</option>
-                        </select>
-                      ) : (
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => setOpenDropdown(u._id)}
-                        >
-                          {u.user_type}
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-2 px-4 border">
-                      {u.user_type === "developer" ? (
-                        u.verification_status === "approved" ? <span className="text-green-500 font-semibold">მომხმარებლის მოთხოვნა დადასტურებულია</span>
-                        : u.verification_status === "rejected" ? <span className="text-red-500 font-semibold">მომხმარებლის მოთხოვნა უარყოფილია</span>
-                        : u.verification_status === "none" ? <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-600"}`}>მომხმარებელს მოთხოვნა არ გამოუგზავნია</span>
-                        : <><button onClick={() => setModal({ show: true, type: "approve", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის დადასტურება?" })} className="bg-green-600 text-white px-3 py-1 rounded mr-1">დადასტურება</button>
-                          <button onClick={() => setModal({ show: true, type: "reject", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის უარყოფა?" })} className="bg-red-600 text-white px-3 py-1 rounded">უარყოფა</button></>
-                      ) : <span className={`font-semibold ${darkMode ? "text-gray-300" : "text-gray-500"}`}>N/A</span>}
-                    </td>
-
-                    <td className="py-2 px-4 border flex flex-col space-y-1">
-                      <button onClick={() => setModal({ show: true, type: "deleteUser", id: u._id, message: "ნამდვილად გსურთ ამ მომხმარებლის წაშლა?" })} className="bg-gray-600 text-white px-3 py-1 rounded">წაშლა</button>
-                    </td>
-                  </tr>
-                ))}
+                          წაშლა
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -229,7 +340,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         {activeSection === "services" && (
           <div className="overflow-x-auto">
             <h1 className="text-2xl font-bold mb-4">სერვისების მართვა</h1>
-            <table className={`min-w-full border ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
+            <table className={`min-w-[700px] w-full border ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
               <thead className={tableHeaderColor}>
                 <tr>
                   <th className="py-2 px-4 border">ID</th>
@@ -238,11 +349,13 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                 </tr>
               </thead>
               <tbody>
-                {services.map(s => (
+                {services.map((s) => (
                   <tr key={s._id} className={`border-t ${darkMode ? "border-gray-600" : "border-gray-300"}`}>
                     <td className="py-2 px-4 border">{s._id}</td>
                     <td className="py-2 px-4 border">{s.name || s.title || "Untitled"}</td>
-                    <td className="py-2 px-4 border"><button onClick={() => setModal({ show: true, type: "delete", id: s._id, message: "ნამდვილად გსურთ ამ სერვისის წაშლა?" })} className="bg-red-600 text-white px-3 py-1 rounded">წაშლა</button></td>
+                    <td className="py-2 px-4 border">
+                      <button onClick={() => setModal({ show: true, type: "delete", id: s._id, message: "ნამდვილად გსურთ ამ სერვისის წაშლა?" })} className="bg-red-600 text-white px-3 py-1 rounded">წაშლა</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -252,7 +365,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
       </main>
 
       {modal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-40">
           <div className={`rounded-lg p-6 w-full max-w-sm text-center ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
             <p className="mb-6">{modal.message}</p>
             <div className="flex justify-around">
