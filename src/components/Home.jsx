@@ -173,69 +173,116 @@ export default function Home({ darkMode }) {
         )}
       </section>
 
-      {editingService && (
-        <div className="max-w-xl mx-auto p-6 mt-8 bg-gray-100 dark:bg-gray-800 rounded-xl shadow-md">
-          <h3 className="text-2xl font-semibold mb-4">სერვისის განახლება</h3>
-          <input
-            type="text"
-            placeholder="Title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full mb-2 p-2 rounded border"
-          />
-          <textarea
-            placeholder="Description"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            className="w-full mb-2 p-2 rounded border"
-          />
-          {formData.type === "offering" && (
-            <>
-              <input
-                type="number"
-                placeholder="Price"
-                value={formData.price}
-                onChange={(e) =>
-                  setFormData({ ...formData, price: Number(e.target.value) })
-                }
-                className="w-full mb-2 p-2 rounded border"
-              />
-              <input
-                type="text"
-                placeholder="Currency"
-                value={formData.currency}
-                onChange={(e) =>
-                  setFormData({ ...formData, currency: e.target.value })
-                }
-                className="w-full mb-2 p-2 rounded border"
-              />
-            </>
-          )}
-          <input
-            type="text"
-            placeholder="Category"
-            value={formData.category}
-            onChange={(e) =>
-              setFormData({ ...formData, category: e.target.value })
-            }
-            className="w-full mb-2 p-2 rounded border"
-          />
-          <button
-            onClick={handleUpdate}
-            className="px-4 py-2 mt-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            განახლება
-          </button>
-          <button
-            onClick={() => setEditingService(null)}
-            className="px-4 py-2 mt-2 ml-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-          >
-            დახურვა
-          </button>
-        </div>
-      )}
+     {editingService && (
+  <div
+    className={`max-w-xl mx-auto p-6 mt-12 rounded-2xl shadow-lg transition-all duration-300 ${
+      darkMode
+        ? "bg-gray-800/90 border border-gray-700 text-white"
+        : "bg-white/90 border border-gray-200 text-gray-900"
+    }`}
+  >
+    <h3 className="text-3xl font-semibold mb-6 text-center">სერვისის განახლება</h3>
+
+    <input
+      type="text"
+      placeholder="სათაური"
+      value={formData.title}
+      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+      className={`w-full mb-3 p-3 rounded-lg border outline-none transition ${
+        darkMode
+          ? "bg-gray-700 border-gray-600 placeholder-gray-400 focus:border-blue-500"
+          : "bg-gray-50 border-gray-300 placeholder-gray-500 focus:border-blue-600"
+      }`}
+    />
+
+    <textarea
+      placeholder="აღწერა"
+      value={formData.description}
+      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+      className={`w-full mb-3 p-3 rounded-lg border outline-none transition resize-none h-28 ${
+        darkMode
+          ? "bg-gray-700 border-gray-600 placeholder-gray-400 focus:border-blue-500"
+          : "bg-gray-50 border-gray-300 placeholder-gray-500 focus:border-blue-600"
+      }`}
+    />
+
+    {formData.type === "offering" && (
+      <>
+        <input
+          type="number"
+          placeholder="ფასი"
+          value={formData.price}
+          onChange={(e) =>
+            setFormData({ ...formData, price: Number(e.target.value) })
+          }
+          className={`w-full mb-3 p-3 rounded-lg border outline-none transition ${
+            darkMode
+              ? "bg-gray-700 border-gray-600 placeholder-gray-400 focus:border-blue-500"
+              : "bg-gray-50 border-gray-300 placeholder-gray-500 focus:border-blue-600"
+          }`}
+        />
+        <input
+          type="text"
+          placeholder="ვალუტა"
+          value={formData.currency}
+          onChange={(e) =>
+            setFormData({ ...formData, currency: e.target.value })
+          }
+          className={`w-full mb-3 p-3 rounded-lg border outline-none transition ${
+            darkMode
+              ? "bg-gray-700 border-gray-600 placeholder-gray-400 focus:border-blue-500"
+              : "bg-gray-50 border-gray-300 placeholder-gray-500 focus:border-blue-600"
+          }`}
+        />
+      </>
+    )}
+
+    <input
+      type="text"
+      placeholder="კატეგორია"
+      value={formData.category}
+      onChange={(e) =>
+        setFormData({ ...formData, category: e.target.value })
+      }
+      className={`w-full mb-3 p-3 rounded-lg border outline-none transition ${
+        darkMode
+          ? "bg-gray-700 border-gray-600 placeholder-gray-400 focus:border-blue-500"
+          : "bg-gray-50 border-gray-300 placeholder-gray-500 focus:border-blue-600"
+      }`}
+    />
+
+    <div className="flex justify-end mt-6 space-x-3">
+      <button
+        onClick={handleUpdate}
+        className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition"
+      >
+        განახლება
+      </button>
+      <button
+        onClick={() => setEditingService(null)}
+        className={`px-5 py-2.5 font-medium rounded-lg transition ${
+          darkMode
+            ? "bg-gray-600 hover:bg-gray-500 text-white"
+            : "bg-gray-300 hover:bg-gray-400 text-gray-900"
+        }`}
+      >
+        დახურვა
+      </button>
+    </div>
+  </div>
+)}
+
+<div className="flex justify-center mt-20">
+  <p
+    className={`text-[40px] sm:text-[50px] md:text-[30px] font-extrabold text-center px-4 transition-colors duration-300 ${
+      darkMode
+        ? "text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
+        : "text-gray-800 drop-shadow-[0_0_6px_rgba(0,0,0,0.1)]"
+    }`}
+  >
+    აწყობილი პროექტები
+  </p>
+</div>
       <div className="flex justify-center mt-16">
         <p
           className={`text-[40px] sm:text-[50px] md:text-[30px] mt-[100px] font-bold text-center px-2 transition-colors duration-300 ${
