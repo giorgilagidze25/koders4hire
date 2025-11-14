@@ -10,7 +10,6 @@ export default function Profile({ darkMode }) {
   const [updateForm, setUpdateForm] = useState({ real_name: "", username: "", email: "" });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [actionType, setActionType] = useState("");
-
   const [receivedProposals, setReceivedProposals] = useState([]);
   const [sentProposals, setSentProposals] = useState([]);
 
@@ -37,7 +36,7 @@ export default function Profile({ darkMode }) {
           fetchServices(data.username);
           fetchProposals();
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to fetch profile");
       }
     };
@@ -47,7 +46,7 @@ export default function Profile({ darkMode }) {
         const res = await fetch(`https://api.k4h.dev/rating/user/${userId}`);
         const data = await res.json();
         if (res.ok) setRatings(data);
-      } catch (err) {
+      } catch {
         toast.error("Failed to fetch ratings");
       }
     };
@@ -58,7 +57,7 @@ export default function Profile({ darkMode }) {
         const allServices = await res.json();
         const myServices = allServices.filter((s) => s.owner?.username === username);
         setServices(myServices);
-      } catch (err) {
+      } catch {
         toast.error("Failed to fetch services");
       }
     };
@@ -74,7 +73,7 @@ export default function Profile({ darkMode }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (sentRes.ok) setSentProposals(await sentRes.json());
-      } catch (err) {
+      } catch {
         toast.error("Failed to fetch proposals");
       }
     };
@@ -103,41 +102,7 @@ export default function Profile({ darkMode }) {
         toast.success("Profile updated successfully");
         setUser(data);
       } else toast.error("Failed to update profile");
-    } catch (err) {
-      toast.error("An error occurred");
-    }
-  };
-
-  const handleProposalApproval = (proposalId) => async () => {
-    try {
-      const res = await fetch(`https://api.k4h.dev/proposals/${proposalId}/approve`, { 
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast.success("Proposal approved");
-        setReceivedProposals((prev) => prev.filter((p) => p._id !== proposalId));
-      } else {
-        toast.error("Failed to approve proposal");
-      }
-    } catch (err) {
-      toast.error("An error occurred");
-    }
-  };
-
-  const handleProposalRejection = (proposalId) => async () => {
-    try {
-      const res = await fetch(`https://api.k4h.dev/proposals/${proposalId}/reject`, { 
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        toast.success("Proposal rejected");
-        setReceivedProposals((prev) => prev.filter((p) => p._id !== proposalId));
-      } else {
-        toast.error("Failed to reject proposal");
-      }
-    } catch (err) {
+    } catch {
       toast.error("An error occurred");
     }
   };
@@ -209,71 +174,72 @@ export default function Profile({ darkMode }) {
         )}
 
         {activeSection === "receivedProposals" && (
-  <div>
-    <h2 className="text-3xl font-bold mb-6">Proposals Received</h2>
-    {receivedProposals.length > 0 ? receivedProposals.map(p => (
-      <div key={p._id} className="border p-4 rounded mb-4">
-        <p><strong>From:</strong> {p.buyer?.real_name} <span>(@{p.buyer?.username})</span></p> 
-        <p><strong>Service:</strong> {p.service?.title}</p>
-        <p><strong>Message:</strong> {p.message}</p>
-        <p><strong>Price:</strong> {p.price} {p.currency}</p>
-        <p><strong>Status:</strong> {p.status}</p>
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Proposals Received</h2>
+            {receivedProposals.length > 0 ? receivedProposals.map(p => (
+              <div key={p._id} className="border p-4 rounded mb-4">
+                <p><strong>From:</strong> {p.buyer?.real_name} <span>(@{p.buyer?.username})</span></p> 
+                <p><strong>Service:</strong> {p.service?.title}</p>
+                <p><strong>Message:</strong> {p.message}</p>
+                <p><strong>Price:</strong> {p.price} {p.currency}</p>
+                <p><strong>Status:</strong> {p.status}</p>
 
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/accept`, {
-                  method: "POST",
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                const data = await res.json();
-                if (res.ok) {
-                  toast.success("Proposal approved");
-                  setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
-                  window.location.href = `/chat/${data.chat._id}`;
-                } else {
-                  toast.error(data.error || "Failed to approve proposal");
-                }
-              } catch (err) {
-                toast.error("An error occurred");
-              }
-            }}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Approve
-          </button>
+                {p.status === "pending" && (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/accept`, {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          const data = await res.json();
+                          if (res.ok) {
+                            toast.success("Proposal approved");
+                            setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
+                            window.location.href = `/chat/${data.chat._id}`;
+                          } else {
+                            toast.error(data.error || "Failed to approve proposal");
+                          }
+                        } catch {
+                          toast.error("An error occurred");
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Approve
+                    </button>
 
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/reject`, {
-                  method: "POST",
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                if (res.ok) {
-                  toast.success("Proposal rejected");
-                  setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
-                } else {
-                  const data = await res.json();
-                  toast.error(data.error || "Failed to reject proposal");
-                }
-              } catch (err) {
-                toast.error("An error occurred");
-              }
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Decline
-          </button>
-        </div>
-      </div>
-    )) : <p>No proposals received yet.</p>}
-  </div>
-)}
-
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/reject`, {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          if (res.ok) {
+                            toast.success("Proposal rejected");
+                            setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
+                          } else {
+                            const data = await res.json();
+                            toast.error(data.error || "Failed to reject proposal");
+                          }
+                        } catch {
+                          toast.error("An error occurred");
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
+              </div>
+            )) : <p>No proposals received yet.</p>}
+          </div>
+        )}
 
         {activeSection === "sentProposals" && (
           <div>
