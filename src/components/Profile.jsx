@@ -8,6 +8,7 @@ export default function Profile({ darkMode }) {
   const [services, setServices] = useState([]);
   const [ratings, setRatings] = useState({ averageRating: 0, totalScore: 0 });
   const [updateForm, setUpdateForm] = useState({ real_name: "", username: "", email: "" });
+  const [profileImage, setProfileImage] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [actionType, setActionType] = useState("");
   const [receivedProposals, setReceivedProposals] = useState([]);
@@ -82,7 +83,11 @@ export default function Profile({ darkMode }) {
   }, [token]);
 
   if (!user) {
-    return <div className="text-center mt-10 flex justify-center items-center min-h-screen">იტვირთება...</div>;
+    return (
+      <div className="text-center mt-10 flex justify-center items-center min-h-screen">
+        იტვირთება...
+      </div>
+    );
   }
 
   const handleUpdate = async () => {
@@ -106,6 +111,37 @@ export default function Profile({ darkMode }) {
       toast.error("An error occurred");
     }
   };
+
+  const handleProfileImageUpload = async () => {
+  if (!profileImage) return toast.error("Please select an image");
+
+  try {
+    const formData = new FormData();
+    formData.append("profile_image", profileImage);
+    formData.append("real_name", updateForm.real_name);
+    formData.append("username", updateForm.username);
+    formData.append("email", updateForm.email);
+
+    const res = await fetch("https://api.k4h.dev/users/upd", {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      toast.success("Profile updated successfully");
+      setUser(data);
+      setProfileImage(null);
+    } else {
+      toast.error(data.error || "Failed to update profile");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("An error occurred while updating profile");
+  }
+};
+
 
   const handleDangerAction = async () => {
     setShowConfirmModal(false);
@@ -139,6 +175,9 @@ export default function Profile({ darkMode }) {
           <div className="max-w-xl p-6 rounded-2xl shadow-lg relative">
             <h2 className="text-3xl font-bold mb-6 text-center">User Info</h2>
             <div className="space-y-2 text-lg">
+              <img src={user.profile_image} alt="Profile Picture" className="w-24 h-24 rounded-full object-cover mb-2" />
+              <input type="file" accept="image/*" onChange={e => setProfileImage(e.target.files[0])} className="mb-2" />
+              <button onClick={handleProfileImageUpload} className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Update Profile Picture</button>
               <p><strong>Name:</strong> {user.real_name}</p>
               <p><strong>Username:</strong> {user.username}</p>
               <p><strong>Email:</strong> {user.email}</p>
@@ -159,26 +198,18 @@ export default function Profile({ darkMode }) {
             <h2 className="text-3xl font-bold mb-6">My Services</h2>
             {services.length > 0 ? services.map(s => (
               <div key={s._id} className="border p-4 rounded mb-4">
-                <h3 className="font-semibold">{s.title}</h3>
+                <h3 className="font-semibold text-xl">{s.title}</h3>
                 <p>{s.description}</p>
                 <p><strong>Price:</strong> {s.price} {s.currency}</p>
                 <p>Category: {s.category}</p>
-                <div className="mt-2">
-                  <p className="font-medium">Tags:</p>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    {Array.isArray(s.tags) && s.tags.length > 0
-                      ? s.tags.map((t, i) => (
-                          <span key={i} className="px-2 py-1 bg-gray-200 text-gray-800 rounded-full text-sm dark:bg-gray-700 dark:text-white">
-                            {t}
-                          </span>
-                        ))
-                      : <span className="text-sm text-gray-500">No tags</span>
-                    }
+                {s.tags && s.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {s.tags.map((t, i) => (
+                      <span key={i} className="px-2 py-1 bg-gray-200 text-gray-800 rounded-full text-sm dark:bg-gray-700 dark:text-white">{t}</span>
+                    ))}
                   </div>
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button onClick={() => window.location.href = `/service/${s._id}`} className="py-1 px-3 bg-blue-600 text-white rounded hover:bg-blue-700">View Service</button>
-                </div>
+                )}
+                <button onClick={() => window.location.href = `/service/${s._id}`} className="mt-3 py-1 px-3 bg-blue-600 text-white rounded hover:bg-blue-700">View Service</button>
               </div>
             )) : <p>No services found.</p>}
           </div>
@@ -187,6 +218,35 @@ export default function Profile({ darkMode }) {
         {activeSection === "danger" && (
           <div className="space-y-4">
             <button onClick={() => { setActionType("delete"); setShowConfirmModal(true); }} className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete Account</button>
+          </div>
+        )}
+
+        {activeSection === "receivedProposals" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Proposals Received</h2>
+            {receivedProposals.length > 0 ? receivedProposals.map(p => (
+              <div key={p._id} className="border p-4 rounded mb-4">
+                <p><strong>From:</strong> {p.buyer?.real_name} <span>(@{p.buyer?.username})</span></p>
+                <p><strong>Service:</strong> {p.service?.title}</p>
+                <p><strong>Message:</strong> {p.message}</p>
+                <p><strong>Price:</strong> {p.price} {p.currency}</p>
+                <p><strong>Status:</strong> {p.status}</p>
+              </div>
+            )) : <p>No proposals received yet.</p>}
+          </div>
+        )}
+
+        {activeSection === "sentProposals" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Proposals Sent</h2>
+            {sentProposals.length > 0 ? sentProposals.map(p => (
+              <div key={p._id} className="border p-4 rounded mb-4">
+                <p><strong>To Service:</strong> {p.service?.title}</p>
+                <p><strong>Message:</strong> {p.message}</p>
+                <p><strong>Price:</strong> {p.price} {p.currency}</p>
+                <p><strong>Status:</strong> {p.status}</p>
+              </div>
+            )) : <p>No proposals sent yet.</p>}
           </div>
         )}
 
