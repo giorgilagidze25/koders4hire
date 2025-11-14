@@ -14,7 +14,8 @@ import Dashboard from './components/Dashboard';
 import AddService from './components/AddServis';
 import UserProfile from './components/UserCard';
 import ServiceDetail from "./components/ServicDetail.";
-
+import Propose from "./components/Propose";
+// import Chat from "./components/Chat";
 function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState(null);
@@ -75,7 +76,15 @@ function App() {
             <Route path="/user/:username" element={<UserProfile />} />
             <Route path="/dashboard" element={<AdminProtectedRoute><Dashboard darkMode={darkMode} setDarkMode={setDarkMode} /></AdminProtectedRoute>} />
             <Route path="/service/:id" element={<ServiceDetail darkMode={darkMode} />} />
-     
+            <Route path="/propose/:serviceId" element={<ProtectedRoute><Propose darkMode={darkMode} /></ProtectedRoute>} />
+            {/* <Route 
+  path="/chat/:chatId" 
+  element={
+    <ProtectedRoute>
+      <Chat darkMode={darkMode} />
+    </ProtectedRoute>
+  } 
+/> */}
           </Routes>
         </div>
       </BrowserRouter>
