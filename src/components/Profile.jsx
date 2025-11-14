@@ -33,7 +33,7 @@ export default function Profile({ darkMode }) {
             email: data.email || "",
           });
           fetchRatings(data._id);
-          fetchServices(data.username);
+          fetchServices(data._id);
           fetchProposals();
         }
       } catch {
@@ -51,11 +51,11 @@ export default function Profile({ darkMode }) {
       }
     };
 
-    const fetchServices = async (username) => {
+    const fetchServices = async (userId) => {
       try {
         const res = await fetch("https://api.k4h.dev/services");
         const allServices = await res.json();
-        const myServices = allServices.filter((s) => s.owner?.username === username);
+        const myServices = allServices.filter(s => s.owner?._id === userId);
         setServices(myServices);
       } catch {
         toast.error("Failed to fetch services");
@@ -157,101 +157,36 @@ export default function Profile({ darkMode }) {
         {activeSection === "services" && (
           <div>
             <h2 className="text-3xl font-bold mb-6">My Services</h2>
-            {services.map(s => (
+            {services.length > 0 ? services.map(s => (
               <div key={s._id} className="border p-4 rounded mb-4">
                 <h3 className="font-semibold">{s.title}</h3>
                 <p>{s.description}</p>
                 <p><strong>Price:</strong> {s.price} {s.currency}</p>
+                <p>Category: {s.category}</p>
+                <div className="mt-2">
+                  <p className="font-medium">Tags:</p>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {Array.isArray(s.tags) && s.tags.length > 0
+                      ? s.tags.map((t, i) => (
+                          <span key={i} className="px-2 py-1 bg-gray-200 text-gray-800 rounded-full text-sm dark:bg-gray-700 dark:text-white">
+                            {t}
+                          </span>
+                        ))
+                      : <span className="text-sm text-gray-500">No tags</span>
+                    }
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button onClick={() => window.location.href = `/service/${s._id}`} className="py-1 px-3 bg-blue-600 text-white rounded hover:bg-blue-700">View Service</button>
+                </div>
               </div>
-            ))}
+            )) : <p>No services found.</p>}
           </div>
         )}
 
         {activeSection === "danger" && (
           <div className="space-y-4">
             <button onClick={() => { setActionType("delete"); setShowConfirmModal(true); }} className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete Account</button>
-          </div>
-        )}
-
-        {activeSection === "receivedProposals" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Proposals Received</h2>
-            {receivedProposals.length > 0 ? receivedProposals.map(p => (
-              <div key={p._id} className="border p-4 rounded mb-4">
-                <p><strong>From:</strong> {p.buyer?.real_name} <span>(@{p.buyer?.username})</span></p> 
-                <p><strong>Service:</strong> {p.service?.title}</p>
-                <p><strong>Message:</strong> {p.message}</p>
-                <p><strong>Price:</strong> {p.price} {p.currency}</p>
-                <p><strong>Status:</strong> {p.status}</p>
-
-                {p.status === "pending" && (
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/accept`, {
-                            method: "POST",
-                            headers: { Authorization: `Bearer ${token}` },
-                          });
-                          const data = await res.json();
-                          if (res.ok) {
-                            toast.success("Proposal approved");
-                            setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
-                            window.location.href = `/chat/${data.chat._id}`;
-                          } else {
-                            toast.error(data.error || "Failed to approve proposal");
-                          }
-                        } catch {
-                          toast.error("An error occurred");
-                        }
-                      }}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/reject`, {
-                            method: "POST",
-                            headers: { Authorization: `Bearer ${token}` },
-                          });
-                          if (res.ok) {
-                            toast.success("Proposal rejected");
-                            setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
-                          } else {
-                            const data = await res.json();
-                            toast.error(data.error || "Failed to reject proposal");
-                          }
-                        } catch {
-                          toast.error("An error occurred");
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                    >
-                      Decline
-                    </button>
-                  </div>
-                )}
-              </div>
-            )) : <p>No proposals received yet.</p>}
-          </div>
-        )}
-
-        {activeSection === "sentProposals" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Proposals Sent</h2>
-            {sentProposals.length > 0 ? sentProposals.map(p => (
-              <div key={p._id} className="border p-4 rounded mb-4">
-                <p><strong>To Service:</strong> {p.service?.title}</p>
-                <p><strong>Message:</strong> {p.message}</p>
-                <p><strong>Price:</strong> {p.price} {p.currency}</p>
-                <p><strong>Status:</strong> {p.status}</p>
-              </div>
-            )) : <p>No proposals sent yet.</p>}
           </div>
         )}
 
