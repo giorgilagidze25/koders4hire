@@ -7,10 +7,13 @@ export default function Profile({ darkMode }) {
   const [activeSection, setActiveSection] = useState("info");
   const [services, setServices] = useState([]);
   const [ratings, setRatings] = useState({ averageRating: 0, totalScore: 0 });
-  const [paypal, setPaypal] = useState(null);
   const [updateForm, setUpdateForm] = useState({ real_name: "", username: "", email: "" });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [actionType, setActionType] = useState(""); 
+  const [actionType, setActionType] = useState("");
+
+  const [receivedProposals, setReceivedProposals] = useState([]);
+  const [sentProposals, setSentProposals] = useState([]);
+
   const token = Cookies.get("token");
   const sidebarColor = darkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-900";
 
@@ -18,16 +21,24 @@ export default function Profile({ darkMode }) {
     if (!token) return;
 
     const fetchProfile = async () => {
-      const res = await fetch("https://api.k4h.dev/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUser(data);
-        setUpdateForm({ real_name: data.real_name || "", username: data.username || "", email: data.email || "" });
-        setPaypal(data.paypal_account || null);
-        fetchRatings(data._id);
-        fetchServices(data.username);
+      try {
+        const res = await fetch("https://api.k4h.dev/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data);
+          setUpdateForm({
+            real_name: data.real_name || "",
+            username: data.username || "",
+            email: data.email || "",
+          });
+          fetchRatings(data._id);
+          fetchServices(data.username);
+          fetchProposals();
+        }
+      } catch (err) {
+        toast.error("Failed to fetch profile");
       }
     };
 
@@ -43,11 +54,28 @@ export default function Profile({ darkMode }) {
 
     const fetchServices = async (username) => {
       try {
-        const res = await fetch(`https://api.k4h.dev/users/${username}`);
-        const data = await res.json();
-        if (res.ok) setServices(data.services || []);
+        const res = await fetch("https://api.k4h.dev/services");
+        const allServices = await res.json();
+        const myServices = allServices.filter((s) => s.owner?.username === username);
+        setServices(myServices);
       } catch (err) {
         toast.error("Failed to fetch services");
+      }
+    };
+
+    const fetchProposals = async () => {
+      try {
+        const receivedRes = await fetch("https://api.k4h.dev/proposals/received", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (receivedRes.ok) setReceivedProposals(await receivedRes.json());
+
+        const sentRes = await fetch("https://api.k4h.dev/proposals/sent", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (sentRes.ok) setSentProposals(await sentRes.json());
+      } catch (err) {
+        toast.error("Failed to fetch proposals");
       }
     };
 
@@ -55,19 +83,16 @@ export default function Profile({ darkMode }) {
   }, [token]);
 
   if (!user) {
-    return (
-      <div className="text-center mt-10 flex justify-center items-center min-h-screen">
-        იტვირთება...
-      </div>
-    );
+    return <div className="text-center mt-10 flex justify-center items-center min-h-screen">იტვირთება...</div>;
   }
 
   const handleUpdate = async () => {
-    const formData = new FormData();
-    formData.append("real_name", updateForm.real_name);
-    formData.append("username", updateForm.username);
-    formData.append("email", updateForm.email);
     try {
+      const formData = new FormData();
+      formData.append("real_name", updateForm.real_name);
+      formData.append("username", updateForm.username);
+      formData.append("email", updateForm.email);
+
       const res = await fetch("https://api.k4h.dev/users/upd", {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
@@ -77,43 +102,41 @@ export default function Profile({ darkMode }) {
       if (res.ok) {
         toast.success("Profile updated successfully");
         setUser(data);
-      } else {
-        toast.error("Failed to update profile");
-      }
+      } else toast.error("Failed to update profile");
     } catch (err) {
       toast.error("An error occurred");
     }
   };
 
-  const handlePaypalConnect = async () => {
+  const handleProposalApproval = (proposalId) => async () => {
     try {
-      const res = await fetch("https://api.k4h.dev/paypal/connect", {
+      const res = await fetch(`https://api.k4h.dev/proposals/${proposalId}/approve`, { 
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ paypal_email: paypal.email, merchant_id: paypal.merchant_id }),
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
       if (res.ok) {
-        toast.success("PayPal connected successfully");
-        setPaypal(data);
+        toast.success("Proposal approved");
+        setReceivedProposals((prev) => prev.filter((p) => p._id !== proposalId));
       } else {
-        toast.error(data.message || "Failed to connect PayPal");
+        toast.error("Failed to approve proposal");
       }
     } catch (err) {
       toast.error("An error occurred");
     }
   };
 
-  const handlePaypalUpdate = async () => {
+  const handleProposalRejection = (proposalId) => async () => {
     try {
-      const res = await fetch("https://api.k4h.dev/paypal/update", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ paypal_email: paypal.email, merchant_id: paypal.merchant_id }),
+      const res = await fetch(`https://api.k4h.dev/proposals/${proposalId}/reject`, { 
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      if (res.ok) toast.success("PayPal updated successfully");
-      else toast.error(data.message || "Failed to update PayPal");
+      if (res.ok) {
+        toast.success("Proposal rejected");
+        setReceivedProposals((prev) => prev.filter((p) => p._id !== proposalId));
+      } else {
+        toast.error("Failed to reject proposal");
+      }
     } catch (err) {
       toast.error("An error occurred");
     }
@@ -127,22 +150,9 @@ export default function Profile({ darkMode }) {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) window.location.href = "/"; 
-      } catch (err) {
+        if (res.ok) window.location.href = "/";
+      } catch {
         toast.error("Failed to delete account");
-      }
-    } else if (actionType === "disconnect-paypal") {
-      try {
-        const res = await fetch("https://api.k4h.dev/paypal/disconnect", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          toast.success("PayPal disconnected");
-          setPaypal(null);
-        }
-      } catch (err) {
-        toast.error("Failed to disconnect PayPal");
       }
     }
   };
@@ -153,71 +163,31 @@ export default function Profile({ darkMode }) {
         <h2 className="text-2xl font-bold mb-4 md:mb-8">Profile Panel</h2>
         <button onClick={() => setActiveSection("info")} className={`text-left py-2 ${activeSection === "info" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>My Info</button>
         <button onClick={() => setActiveSection("services")} className={`text-left py-2 ${activeSection === "services" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>My Services</button>
-        <button onClick={() => setActiveSection("paypal")} className={`text-left py-2 ${activeSection === "paypal" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>PayPal</button>
+        <button disabled className={`text-left py-2 opacity-50 cursor-not-allowed`}>PayPal (temporarily disabled)</button>
         <button onClick={() => setActiveSection("danger")} className={`text-left py-2 ${activeSection === "danger" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Danger Zone</button>
+        <button onClick={() => setActiveSection("receivedProposals")} className={`text-left py-2 ${activeSection === "receivedProposals" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Proposals Received</button>
+        <button onClick={() => setActiveSection("sentProposals")} className={`text-left py-2 ${activeSection === "sentProposals" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Proposals Sent</button>
       </div>
 
-      <div className="flex-1 p-6">
-      {activeSection === "info" && (
-  <div className="max-w-xl p-6 rounded-2xl  shadow-lg relative">
-    <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 bg-clip-text text-transparent">User Info</h2>
-    <div className="flex justify-center mb-6 relative">
-      <img
-        src={user.profile_image}
-        alt="Profile"
-        className="w-24 h-24 rounded-full object-cover"
-      />
-      <label className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 border-2 border-white dark:border-gray-800">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z" />
-        </svg>
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={e => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const formData = new FormData();
-            formData.append("profile_image", file);
-            formData.append("real_name", updateForm.real_name);
-            formData.append("username", updateForm.username);
-            formData.append("email", updateForm.email);
-            fetch("https://api.k4h.dev/users/upd", {
-              method: "PUT",
-              headers: { Authorization: `Bearer ${token}` },
-              body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data._id) {
-                setUser(data);
-                toast.success("Profile picture updated");
-              } else {
-                toast.error("Failed to update profile picture");
-              }
-            })
-            .catch(() => toast.error("An error occurred"));
-          }}
-        />
-      </label>
-    </div>
-    <div className="space-y-2   text-lg">
-      <p><strong>Name:</strong> {user.real_name}</p>
-      <p><strong>Username:</strong> {user.username}</p>
-      <p><strong>Email:</strong> {user.email}</p>
-      <p><strong>Role:</strong> {user.user_type}</p>
-      <p><strong>Average Rating:</strong> {ratings.averageRating} ({ratings.totalScore} total)</p>
-    </div>
-    <div className="mt-4 space-y-2">
-      <input type="text" placeholder="Real Name" value={updateForm.real_name} onChange={e => setUpdateForm({ ...updateForm, real_name: e.target.value })} className="w-full p-2 border rounded"/>
-      <input type="text" placeholder="Username" value={updateForm.username} onChange={e => setUpdateForm({ ...updateForm, username: e.target.value })} className="w-full p-2 border rounded"/>
-      <input type="email" placeholder="Email" value={updateForm.email} onChange={e => setUpdateForm({ ...updateForm, email: e.target.value })} className="w-full p-2 border rounded"/>
-      <button onClick={handleUpdate} className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mt-2">Update Info</button>
-    </div>
-  </div>
-)}
-
+      <div className="flex-1 p-6 space-y-6">
+        {activeSection === "info" && (
+          <div className="max-w-xl p-6 rounded-2xl shadow-lg relative">
+            <h2 className="text-3xl font-bold mb-6 text-center">User Info</h2>
+            <div className="space-y-2 text-lg">
+              <p><strong>Name:</strong> {user.real_name}</p>
+              <p><strong>Username:</strong> {user.username}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Role:</strong> {user.user_type}</p>
+              <p><strong>Average Rating:</strong> {ratings.averageRating} ({ratings.totalScore} total)</p>
+            </div>
+            <div className="mt-4 space-y-2">
+              <input type="text" placeholder="Real Name" value={updateForm.real_name} onChange={e => setUpdateForm({ ...updateForm, real_name: e.target.value })} className="w-full p-2 border rounded"/>
+              <input type="text" placeholder="Username" value={updateForm.username} onChange={e => setUpdateForm({ ...updateForm, username: e.target.value })} className="w-full p-2 border rounded"/>
+              <input type="email" placeholder="Email" value={updateForm.email} onChange={e => setUpdateForm({ ...updateForm, email: e.target.value })} className="w-full p-2 border rounded"/>
+              <button onClick={handleUpdate} className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mt-2">Update Info</button>
+            </div>
+          </div>
+        )}
 
         {activeSection === "services" && (
           <div>
@@ -227,43 +197,101 @@ export default function Profile({ darkMode }) {
                 <h3 className="font-semibold">{s.title}</h3>
                 <p>{s.description}</p>
                 <p><strong>Price:</strong> {s.price} {s.currency}</p>
-                <p><strong>Average Rating:</strong> {s.averageRating || 0}</p>
               </div>
             ))}
-          </div>
-        )}
-
-        {activeSection === "paypal" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">PayPal</h2>
-            {paypal ? (
-              <div className="space-y-2">
-                <p><strong>Email:</strong> {paypal.email}</p>
-                <p><strong>Merchant ID:</strong> {paypal.merchant_id}</p>
-                <p><strong>Connected At:</strong> {paypal.connected_at}</p>
-                <p><strong>Last Verified:</strong> {paypal.last_verified}</p>
-                <input type="email" value={paypal.email} onChange={e => setPaypal({ ...paypal, email: e.target.value })} className="w-full p-2 border rounded"/>
-                <input type="text" value={paypal.merchant_id} onChange={e => setPaypal({ ...paypal, merchant_id: e.target.value })} className="w-full p-2 border rounded"/>
-                <button onClick={handlePaypalUpdate} className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700">Update PayPal</button>
-              </div>
-            ) : (
-              <button onClick={handlePaypalConnect} className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700">Connect PayPal</button>
-            )}
           </div>
         )}
 
         {activeSection === "danger" && (
           <div className="space-y-4">
             <button onClick={() => { setActionType("delete"); setShowConfirmModal(true); }} className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete Account</button>
-            {paypal && (
-              <button onClick={() => { setActionType("disconnect-paypal"); setShowConfirmModal(true); }} className="w-full py-2 bg-orange-600 text-white rounded hover:bg-orange-700">Disconnect PayPal</button>
-            )}
+          </div>
+        )}
+
+        {activeSection === "receivedProposals" && (
+  <div>
+    <h2 className="text-3xl font-bold mb-6">Proposals Received</h2>
+    {receivedProposals.length > 0 ? receivedProposals.map(p => (
+      <div key={p._id} className="border p-4 rounded mb-4">
+        <p><strong>From:</strong> {p.buyer?.real_name} <span>(@{p.buyer?.username})</span></p> 
+        <p><strong>Service:</strong> {p.service?.title}</p>
+        <p><strong>Message:</strong> {p.message}</p>
+        <p><strong>Price:</strong> {p.price} {p.currency}</p>
+        <p><strong>Status:</strong> {p.status}</p>
+
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/accept`, {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  toast.success("Proposal approved");
+                  setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
+                  window.location.href = `/chat/${data.chat._id}`;
+                } else {
+                  toast.error(data.error || "Failed to approve proposal");
+                }
+              } catch (err) {
+                toast.error("An error occurred");
+              }
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Approve
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await fetch(`https://api.k4h.dev/proposals/${p._id}/reject`, {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                  toast.success("Proposal rejected");
+                  setReceivedProposals(prev => prev.filter(x => x._id !== p._id));
+                } else {
+                  const data = await res.json();
+                  toast.error(data.error || "Failed to reject proposal");
+                }
+              } catch (err) {
+                toast.error("An error occurred");
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Decline
+          </button>
+        </div>
+      </div>
+    )) : <p>No proposals received yet.</p>}
+  </div>
+)}
+
+
+        {activeSection === "sentProposals" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Proposals Sent</h2>
+            {sentProposals.length > 0 ? sentProposals.map(p => (
+              <div key={p._id} className="border p-4 rounded mb-4">
+                <p><strong>To Service:</strong> {p.service?.title}</p>
+                <p><strong>Message:</strong> {p.message}</p>
+                <p><strong>Price:</strong> {p.price} {p.currency}</p>
+                <p><strong>Status:</strong> {p.status}</p>
+              </div>
+            )) : <p>No proposals sent yet.</p>}
           </div>
         )}
 
         {showConfirmModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white text-black dark:bg-gray-800 dark:text-white p-6 rounded-lg max-w-sm w-full space-y-4">
+            <div className={`p-6 rounded-lg max-w-sm w-full space-y-4 ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
               <p>Are you sure?</p>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 border rounded">Cancel</button>
