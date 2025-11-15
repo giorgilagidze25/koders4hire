@@ -113,35 +113,75 @@ export default function Profile({ darkMode }) {
   };
 
   const handleProfileImageUpload = async () => {
-  if (!profileImage) return toast.error("Please select an image");
+    if (!profileImage) return toast.error("Please select an image");
 
-  try {
-    const formData = new FormData();
-    formData.append("profile_image", profileImage);
-    formData.append("real_name", updateForm.real_name);
-    formData.append("username", updateForm.username);
-    formData.append("email", updateForm.email);
+    try {
+      const formData = new FormData();
+      formData.append("profile_image", profileImage);
+      formData.append("real_name", updateForm.real_name);
+      formData.append("username", updateForm.username);
+      formData.append("email", updateForm.email);
 
-    const res = await fetch("https://api.k4h.dev/users/upd", {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+      const res = await fetch("https://api.k4h.dev/users/upd", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      toast.success("Profile updated successfully");
-      setUser(data);
-      setProfileImage(null);
-    } else {
-      toast.error(data.error || "Failed to update profile");
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Profile updated successfully");
+        setUser(data);
+        setProfileImage(null);
+      } else {
+        toast.error(data.error || "Failed to update profile");
+      }
+    } catch {
+      toast.error("An error occurred while updating profile");
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("An error occurred while updating profile");
-  }
-};
+  };
 
+  const handleProposalApproval = async (proposalId) => {
+    try {
+      const req = await fetch(`https://api.k4h.dev/proposals/${proposalId}/approve`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const res = await req.json();
+      if (req.ok) {
+        toast.success("Proposal approved successfully");
+        setReceivedProposals(prev =>
+          prev.map(p => (p._id === proposalId ? res : p))
+        );
+      } else {
+        toast.error(res.error || "Failed to approve proposal");
+      }
+    } catch {
+      toast.error("Failed to approve proposal");
+    }
+  };
+
+  const handleProposalRejection = async (proposalId) => {
+    try {
+      const req = await fetch(`https://api.k4h.dev/proposals/${proposalId}/reject`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const res = await req.json();
+
+      if (req.ok) {
+        toast.success("Proposal rejected");
+        setReceivedProposals(prev =>
+          prev.map(p => (p._id === proposalId ? res : p))
+        );
+      } else {
+        toast.error(res.error || "Failed to reject proposal");
+      }
+    } catch {
+      toast.error("Failed to reject proposal");
+    }
+  }; 
 
   const handleDangerAction = async () => {
     setShowConfirmModal(false);
@@ -164,18 +204,19 @@ export default function Profile({ darkMode }) {
         <h2 className="text-2xl font-bold mb-4 md:mb-8">Profile Panel</h2>
         <button onClick={() => setActiveSection("info")} className={`text-left py-2 ${activeSection === "info" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>My Info</button>
         <button onClick={() => setActiveSection("services")} className={`text-left py-2 ${activeSection === "services" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>My Services</button>
-        <button disabled className={`text-left py-2 opacity-50 cursor-not-allowed`}>PayPal (temporarily disabled)</button>
+        <button disabled className="text-left py-2 opacity-50 cursor-not-allowed">PayPal (temporarily disabled)</button>
         <button onClick={() => setActiveSection("danger")} className={`text-left py-2 ${activeSection === "danger" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Danger Zone</button>
         <button onClick={() => setActiveSection("receivedProposals")} className={`text-left py-2 ${activeSection === "receivedProposals" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Proposals Received</button>
         <button onClick={() => setActiveSection("sentProposals")} className={`text-left py-2 ${activeSection === "sentProposals" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Proposals Sent</button>
       </div>
 
       <div className="flex-1 p-6 space-y-6">
+
         {activeSection === "info" && (
           <div className="max-w-xl p-6 rounded-2xl shadow-lg relative">
             <h2 className="text-3xl font-bold mb-6 text-center">User Info</h2>
             <div className="space-y-2 text-lg">
-              <img src={user.profile_image} alt="Profile Picture" className="w-24 h-24 rounded-full object-cover mb-2" />
+              <img src={user.profile_image} alt="Profile" className="w-24 h-24 rounded-full object-cover mb-2" />
               <input type="file" accept="image/*" onChange={e => setProfileImage(e.target.files[0])} className="mb-2" />
               <button onClick={handleProfileImageUpload} className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Update Profile Picture</button>
               <p><strong>Name:</strong> {user.real_name}</p>
@@ -184,6 +225,7 @@ export default function Profile({ darkMode }) {
               <p><strong>Role:</strong> {user.user_type}</p>
               <p><strong>Average Rating:</strong> {ratings.averageRating} ({ratings.totalScore} total)</p>
             </div>
+
             <div className="mt-4 space-y-2">
               <input type="text" placeholder="Real Name" value={updateForm.real_name} onChange={e => setUpdateForm({ ...updateForm, real_name: e.target.value })} className="w-full p-2 border rounded"/>
               <input type="text" placeholder="Username" value={updateForm.username} onChange={e => setUpdateForm({ ...updateForm, username: e.target.value })} className="w-full p-2 border rounded"/>
@@ -224,15 +266,38 @@ export default function Profile({ darkMode }) {
         {activeSection === "receivedProposals" && (
           <div>
             <h2 className="text-3xl font-bold mb-6">Proposals Received</h2>
-            {receivedProposals.length > 0 ? receivedProposals.map(p => (
-              <div key={p._id} className="border p-4 rounded mb-4">
-                <p><strong>From:</strong> {p.buyer?.real_name} <span>(@{p.buyer?.username})</span></p>
-                <p><strong>Service:</strong> {p.service?.title}</p>
-                <p><strong>Message:</strong> {p.message}</p>
-                <p><strong>Price:</strong> {p.price} {p.currency}</p>
-                <p><strong>Status:</strong> {p.status}</p>
-              </div>
-            )) : <p>No proposals received yet.</p>}
+
+            {receivedProposals.length > 0 ? (
+              receivedProposals.map(p => {
+                const buyer = p.buyer || {};
+                const service = p.service || {};
+                const isPending = p.status === "pending";
+
+                return (
+                  <div key={p._id} className="border p-4 rounded mb-4">
+                    <p><strong>From:</strong> {buyer.real_name || "Unknown"} <span> (@{buyer.username || "unknown"})</span></p>
+                    <p><strong>Service:</strong> {service.title || "Untitled"}</p>
+                    <p><strong>Message:</strong> {p.message}</p>
+                    <p><strong>Price:</strong> {p.price} {p.currency}</p>
+                    <p><strong>Status:</strong> {p.status}</p>
+
+                    {isPending && (
+                      <div className="mt-3 space-x-2">
+                        <button onClick={() => handleProposalApproval(p._id)} className="py-1 px-3 bg-green-600 text-white rounded hover:bg-green-700">
+                          Approve
+                        </button>
+
+                        <button onClick={() => handleProposalRejection(p._id)} className="py-1 px-3 bg-red-600 text-white rounded hover:bg-red-700">
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <p>No proposals received yet.</p>
+            )}
           </div>
         )}
 
@@ -261,6 +326,7 @@ export default function Profile({ darkMode }) {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
