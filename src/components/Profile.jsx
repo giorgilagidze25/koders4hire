@@ -143,7 +143,7 @@ export default function Profile({ darkMode }) {
 
   const handleProposalApproval = async (proposalId) => {
     try {
-      const req = await fetch(`https://api.k4h.dev/proposals/${proposalId}/approve`, {
+      const req = await fetch(`https://api.k4h.dev/proposals/${proposalId}/accept`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
