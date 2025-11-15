@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useCart } from '../context/CartContext';
 import Cookies from "js-cookie";
 import { useNavigate } from 'react-router-dom';
 
 export default function Servis({ darkMode }) {
   const [services, setServices] = useState([]);
-  const { addToCart } = useCart(); 
   const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -24,7 +22,6 @@ export default function Servis({ darkMode }) {
     if (!token) return;
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-      console.log("Payload from token:", payload);
       setCurrentUser({ _id: payload.userId, user_type: payload.user_type || "user" });
     } catch (err) {
       console.error("Token parse error:", err);
@@ -48,11 +45,8 @@ export default function Servis({ darkMode }) {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          setServices((prev) => prev.filter((s) => s._id !== id));
-        } else {
-          alert("Error deleting service");
-        }
+        if (res.ok) setServices(prev => prev.filter(s => s._id !== id));
+        else alert("Error deleting service");
       }
     } catch (err) {
       console.error("Delete error:", err);
@@ -74,22 +68,15 @@ export default function Servis({ darkMode }) {
 
   const handleUpdate = async () => {
     if (!token) return alert("Not authorized");
-
     try {
       const res = await fetch(`https://api.k4h.dev/services/upd/${editingService}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(formData),
       });
-
       if (res.ok) {
         const updated = await res.json();
-        setServices((prev) =>
-          prev.map((s) => (s._id === editingService ? updated : s))
-        );
+        setServices(prev => prev.map(s => s._id === editingService ? updated : s));
         setEditingService(null);
       } else {
         alert("Error updating service");
@@ -99,7 +86,7 @@ export default function Servis({ darkMode }) {
     }
   };
 
-  return ( 
+  return (
     <div>
       <section className="max-w-screen-xl mx-auto px-6 py-16">
         <h2 className={`text-4xl font-bold text-center mb-12 mt-[100px] ${darkMode ? "text-white" : "text-gray-900"}`}>
@@ -131,30 +118,33 @@ export default function Servis({ darkMode }) {
                     კატეგორია: {service.category}
                   </p>
 
-                  <div className="flex justify-end mt-4 space-x-2">
-                    {isOwner && (
-                      <>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleEdit(service); }}
-                          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                        >
-                          განახლება
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(service._id); }}
-                          className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-                        >
-                          წაშლა
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); addToCart(service); }}
-                      className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
-                    >
-                      კარტაში დამატება
-                    </button>
-                  </div>
+<div className="flex justify-end mt-4 space-x-2">
+  {isOwner && (
+    <>
+      <button
+        onClick={(e) => { e.stopPropagation(); handleEdit(service); }}
+        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+      >
+        განახლება
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); handleDelete(service._id); }}
+        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+      >
+        წაშლა
+      </button>
+    </>
+  )}
+  {!isOwner && service.type === "offering" && (
+    <button
+      onClick={(e) => { e.stopPropagation(); navigate(`/propose/${service._id}`, { state: service }); }}
+      className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+    >
+      შეთავაზების გაკეთება
+    </button>
+  )}
+</div>
+
                 </div>
               );
             })}
