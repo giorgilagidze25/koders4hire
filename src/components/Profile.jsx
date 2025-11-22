@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile({ darkMode }) {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("info");
   const [services, setServices] = useState([]);
   const [ratings, setRatings] = useState({ averageRating: 0, totalScore: 0 });
@@ -141,25 +143,37 @@ export default function Profile({ darkMode }) {
     }
   };
 
-  const handleProposalApproval = async (proposalId) => {
-    try {
-      const req = await fetch(`https://api.k4h.dev/proposals/${proposalId}/accept`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const res = await req.json();
-      if (req.ok) {
-        toast.success("Proposal approved successfully");
-        setReceivedProposals(prev =>
-          prev.map(p => (p._id === proposalId ? res : p))
-        );
-      } else {
-        toast.error(res.error || "Failed to approve proposal");
+const handleProposalApproval = async (proposalId) => {
+  try {
+    const req = await fetch(`https://api.k4h.dev/proposals/${proposalId}/accept`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const res = await req.json();
+
+    if (req.ok) {
+      toast.success("Proposal approved successfully");
+
+      setReceivedProposals(prev =>
+        prev.map(p => (p._id === proposalId ? res : p))
+      );
+
+      if (res.chat && res.chat._id) {
+        const chatLoginUrl = `https://chat-k4h.vercel.app/login?token=${token}#/chat/${res.chat._id}`;
+        window.location.href = chatLoginUrl;
       }
-    } catch {
-      toast.error("Failed to approve proposal");
+
+    } else {
+      toast.error(res.error || "Failed to approve proposal");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to approve proposal");
+  }
+};
+
+
 
   const handleProposalRejection = async (proposalId) => {
     try {
