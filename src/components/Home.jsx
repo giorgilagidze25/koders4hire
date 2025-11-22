@@ -2,16 +2,16 @@ import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { CheckCircle } from "lucide-react";
 import data from "./data";
-import { useCart } from "../context/CartContext"; 
 import { useNavigate } from "react-router-dom";
 import Servis from "./Servis";
+import Modal from "./Modal";
 
 export default function Home({ darkMode }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
   const navigate = useNavigate();
   const token = Cookies.get("token");
-  
-
 
   useEffect(() => {
     if (token) {
@@ -24,15 +24,18 @@ export default function Home({ darkMode }) {
     }
   }, [token]);
 
-  
+  const openEditModal = (project) => {
+    setSelectedProject(project);
+    setEditOpen(true);
+  };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-black"}`}>
-     
-
-    <Servis/>
-
-
+    <div
+      className={`min-h-screen transition-colors duration-300 ${
+        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-black"
+      }`}
+    >
+      <Servis darkMode={darkMode} />
 
       <div className="flex justify-center mt-16">
         <p
@@ -48,7 +51,6 @@ export default function Home({ darkMode }) {
         {data.map((item) => (
           <div
             key={item.id}
-            onClick={() => navigate(`/project/${item.id}`, { state: item })}
             className={`cursor-pointer w-full shadow-md rounded-2xl overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl min-w-[320px] ${
               darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
             }`}
@@ -77,6 +79,19 @@ export default function Home({ darkMode }) {
               </p>
               <h2 className="text-xl font-semibold">{item.name}</h2>
               <p className="text-base mt-3">{item.description}</p>
+
+              <div className="mt-4">
+                <button
+                  onClick={() => openEditModal(item)}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-300 ${
+                    darkMode
+                      ? "bg-gray-700 text-white hover:bg-gray-600"
+                      : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                  }`}
+                >
+                  Edit
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -155,6 +170,29 @@ export default function Home({ darkMode }) {
           </div>
         </div>
       </section>
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} darkMode={darkMode}>
+        {selectedProject && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold mb-4">Edit Project</h2>
+            <p><strong>Name:</strong> {selectedProject.name}</p>
+            <p><strong>Stack:</strong> {selectedProject.stack}</p>
+            <p><strong>Price:</strong> {selectedProject.price}</p>
+            <p><strong>Description:</strong> {selectedProject.description}</p>
+
+            <button
+              onClick={() => setEditOpen(false)}
+              className={`mt-4 px-4 py-2 rounded-lg font-semibold transition-colors duration-300 ${
+                darkMode
+                  ? "bg-gray-700 text-white hover:bg-gray-600"
+                  : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+              }`}
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
