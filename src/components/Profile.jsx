@@ -315,19 +315,31 @@ const handleProposalApproval = async (proposalId) => {
           </div>
         )}
 
-        {activeSection === "sentProposals" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Proposals Sent</h2>
-            {sentProposals.length > 0 ? sentProposals.map(p => (
-              <div key={p._id} className="border p-4 rounded mb-4">
-                <p><strong>To Service:</strong> {p.service?.title}</p>
-                <p><strong>Message:</strong> {p.message}</p>
-                <p><strong>Price:</strong> {p.price} {p.currency}</p>
-                <p><strong>Status:</strong> {p.status}</p>
-              </div>
-            )) : <p>No proposals sent yet.</p>}
-          </div>
+{activeSection === "sentProposals" && (
+  <div>
+    <h2 className="text-3xl font-bold mb-6">Proposals Sent</h2>
+    {sentProposals.length > 0 ? sentProposals.map(p => (
+      <div key={p._id} className="border p-4 rounded mb-4">
+        <p><strong>To Service:</strong> {p.service?.title}</p>
+        <p><strong>Message:</strong> {p.message}</p>
+        <p><strong>Price:</strong> {p.price} {p.currency}</p>
+        <p><strong>Status:</strong> {p.status}</p>
+        {p.status === "accepted" && p.chat?._id && (
+          <p className="mt-2 text-green-600">
+            This proposal was accepted, <a
+              href={`https://chat-k4h.vercel.app/login?token=${token}#/chat/${p.chat._id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold"
+            >
+              click here to open the chat (Chat ID is {p.chat?._id})
+            </a>
+          </p>
         )}
+      </div>
+    )) : <p>No proposals sent yet.</p>}
+  </div>
+)}
 
         {showConfirmModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
