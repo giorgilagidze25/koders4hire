@@ -51,7 +51,9 @@ export default function Propose({ darkMode }) {
 
   if (!service) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
+        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+      }`}>
         იტვირთება...
       </div>
     );
@@ -85,8 +87,12 @@ export default function Propose({ darkMode }) {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
-      <div className="max-w-lg w-full p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg space-y-4">
+    <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
+      darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+    }`}>
+      <div className={`max-w-lg w-full p-6 rounded-xl shadow-lg space-y-4 transition-colors duration-300 ${
+        darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+      }`}>
         <h2 className="text-2xl font-bold mb-2">შეთავაზების გაგზავნა</h2>
 
         <p><strong>სერვისი:</strong> {service.title}</p>
@@ -104,18 +110,24 @@ export default function Propose({ darkMode }) {
               placeholder="შეიყვანეთ შეტყობინება"
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              className="w-full p-2 rounded border dark:bg-gray-700 dark:text-white"
+              className={`w-full p-2 rounded border transition-colors duration-300 ${
+                darkMode ? "bg-gray-700 text-white border-gray-600" : "bg-white text-gray-900 border-gray-300"
+              }`}
             />
             <input
               type="number"
               placeholder="თქვენი შეთავაზებული ფასი"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-              className="w-full p-2 rounded border dark:bg-gray-700 dark:text-white"
+              className={`w-full p-2 rounded border transition-colors duration-300 ${
+                darkMode ? "bg-gray-700 text-white border-gray-600" : "bg-white text-gray-900 border-gray-300"
+              }`}
             />
             <button
               onClick={handleSubmit}
-              className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className={`w-full py-2 rounded transition-colors duration-300 ${
+                darkMode ? "bg-green-600 hover:bg-green-700 text-white" : "bg-green-500 hover:bg-green-600 text-white"
+              }`}
             >
               გაგზავნა
             </button>
@@ -126,7 +138,9 @@ export default function Propose({ darkMode }) {
 
         <button
           onClick={() => navigate(-1)}
-          className="w-full py-2 mt-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+          className={`w-full py-2 rounded transition-colors duration-300 ${
+            darkMode ? "bg-gray-400 hover:bg-gray-500 text-white" : "bg-gray-300 hover:bg-gray-400 text-gray-900"
+          }`}
         >
           დახურვა
         </button>
