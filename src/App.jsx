@@ -15,7 +15,7 @@ import AddService from './components/AddServis';
 import UserProfile from './components/UserCard';
 import ServiceDetail from "./components/ServicDetail.";
 import Propose from "./components/Propose";
-// import Chat from "./components/Chat";
+import Verify from "./components/Verify";
 function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState(null);
@@ -60,6 +60,34 @@ function App() {
     return children;
   };
 
+  function VerifyGuard({ children }) {
+  const token = Cookies.get("token");
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("https://api.k4h.dev/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setUser(data);
+      } catch {}
+    };
+    fetchUser();
+  }, [token]);
+
+  if (user && user.verification_status === "approved") {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
   return (
     <div className={darkMode ? "bg-gray-900 text-white min-h-screen" : "bg-white text-black min-h-screen"}>
       <BrowserRouter>
@@ -77,14 +105,14 @@ function App() {
             <Route path="/dashboard" element={<AdminProtectedRoute><Dashboard darkMode={darkMode} setDarkMode={setDarkMode} /></AdminProtectedRoute>} />
             <Route path="/service/:id" element={<ServiceDetail darkMode={darkMode} />} />
             <Route path="/propose/:serviceId" element={<ProtectedRoute><Propose darkMode={darkMode} /></ProtectedRoute>} />
-            {/* <Route 
-  path="/chat/:chatId" 
+         <Route
+  path="/verify"
   element={
-    <ProtectedRoute>
-      <Chat darkMode={darkMode} />
-    </ProtectedRoute>
-  } 
-/> */}
+    <VerifyGuard>
+      <Verify />
+    </VerifyGuard>
+  }
+/>
           </Routes>
         </div>
       </BrowserRouter>
