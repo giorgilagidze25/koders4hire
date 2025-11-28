@@ -32,21 +32,30 @@ export default function Servis({ darkMode }) {
   useEffect(() => {
     fetch("https://api.k4h.dev/services")
       .then((res) => res.json())
-      .then((data) => { if (Array.isArray(data)) setServices(data); })
+      .then((data) => {
+        if (Array.isArray(data)) setServices(data);
+      })
       .catch((err) => console.error("Service fetch error:", err));
   }, []);
 
   const handleDelete = async (id) => {
     if (!token) return alert("Not authorized");
     if (!window.confirm("გსურს ამ სერვისის წაშლა?")) return;
+
     try {
       const res = await fetch(`https://api.k4h.dev/services/del/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setServices(prev => prev.filter(s => s._id !== id));
-      else alert("Error deleting service");
-    } catch (err) { console.error(err); }
+
+      if (res.ok) {
+        setServices(prev => prev.filter(s => s._id !== id));
+      } else {
+        alert("Error deleting service");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleEdit = (service) => {
@@ -64,18 +73,24 @@ export default function Servis({ darkMode }) {
 
   const handleUpdate = async () => {
     if (!token) return alert("Not authorized");
+
     try {
       const res = await fetch(`https://api.k4h.dev/services/upd/${editingService._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(formData),
       });
+
       if (res.ok) {
         const updated = await res.json();
         setServices(prev => prev.map(s => s._id === editingService._id ? updated : s));
         setEditingService(null);
-      } else { alert("Error updating service"); }
-    } catch (err) { console.error(err); }
+      } else {
+        alert("Error updating service");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -89,19 +104,32 @@ export default function Servis({ darkMode }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service) => {
               const isOwner = currentUser && service.owner?._id === currentUser._id;
+
               return (
                 <div
                   key={service._id}
                   onClick={() => navigate(`/service/${service._id}`, { state: service })}
                   className={`shadow-md rounded-2xl p-6 transform transition duration-300 hover:scale-105 hover:shadow-xl ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
                 >
+
+                  {service.image_url && (
+                    <img
+                      src={service.image_url}
+                      alt={service.title}
+                      className="w-full h-48 object-cover rounded-xl mb-4"
+                    />
+                  )}
+
                   <h3 className="text-2xl font-semibold mb-2">{service.title}</h3>
+
                   <p className="text-base mb-4">{service.description}</p>
+
                   {service.type === "offering" && (
                     <p className={`font-semibold ${darkMode ? "text-yellow-400" : "text-green-600"}`}>
                       ფასი: {service.price} {service.currency}
                     </p>
                   )}
+
                   <p className={`mt-1 text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
                     კატეგორია: {service.category}
                   </p>
@@ -115,6 +143,7 @@ export default function Servis({ darkMode }) {
                         >
                           განახლება
                         </button>
+
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDelete(service._id); }}
                           className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
@@ -139,6 +168,7 @@ export default function Servis({ darkMode }) {
         {editingService && (
           <div className="space-y-4">
             <h3 className="text-2xl font-semibold mb-4">სერვისის განახლება</h3>
+
             <input
               type="text"
               placeholder="Title"
@@ -146,12 +176,14 @@ export default function Servis({ darkMode }) {
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full mb-2 p-2 rounded border"
             />
+
             <textarea
               placeholder="Description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full mb-2 p-2 rounded border"
             />
+
             {formData.type === "offering" && (
               <>
                 <input
@@ -170,6 +202,7 @@ export default function Servis({ darkMode }) {
                 />
               </>
             )}
+
             <input
               type="text"
               placeholder="Category"

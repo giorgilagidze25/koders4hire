@@ -11,9 +11,11 @@ export default function AddService({ darkMode }) {
     category: "",
     tags: "",
   });
+
+  const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [errors, setErrors] = useState({}); 
+  const [errors, setErrors] = useState({});
   const token = Cookies.get("token");
 
   useEffect(() => {
@@ -36,7 +38,11 @@ export default function AddService({ darkMode }) {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" }); 
+    setErrors({ ...errors, [e.target.name]: "" });
+  };
+
+  const handleFileChange = (e) => {
+    setImage(e.target.files[0]); 
   };
 
   const handleSubmit = async (e) => {
@@ -46,23 +52,28 @@ export default function AddService({ darkMode }) {
     setErrors({});
 
     try {
-      const payload = {
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        tags: form.tags.split(",").map((tag) => tag.trim()),
-        type: "offering",
-        price: Number(form.price),
-        currency: form.currency,
-      };
+      const formData = new FormData(); 
+
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("category", form.category);
+      formData.append("price", form.price);
+      formData.append("currency", form.currency);
+      formData.append("type", "offering");
+
+      const tagsArray = form.tags.split(",").map((t) => t.trim());
+      tagsArray.forEach((tag) => formData.append("tags", tag));
+
+      if (image) {
+        formData.append("image_url", image);
+      }
 
       const res = await fetch("https://api.k4h.dev/services/new", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       const data = await res.json();
@@ -77,18 +88,9 @@ export default function AddService({ darkMode }) {
           category: "",
           tags: "",
         });
-      } else if (data.error === "Validation error" && Array.isArray(data.details)) {
-        const fieldErrors = {};
-        data.details.forEach((err) => {
-          if (err.includes("title")) fieldErrors.title = err;
-          if (err.includes("description")) fieldErrors.description = err;
-          if (err.includes("price")) fieldErrors.price = err;
-          if (err.includes("category")) fieldErrors.category = err;
-          if (err.includes("tags")) fieldErrors.tags = err;
-        });
-        setErrors(fieldErrors);
+        setImage(null);
       } else {
-        setMessage(data.message || "შეცდომა მოხდა სერვისის დამატებისას");
+        setMessage(data.message || "შეცდომა მოხდა");
       }
     } catch (error) {
       setMessage("შეცდომა: " + error.message);
@@ -111,15 +113,13 @@ export default function AddService({ darkMode }) {
 
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-start pt-10 transition-colors duration-300 ${
+      className={`min-h-screen flex flex-col items-center pt-10 ${
         darkMode ? "bg-gray-900 text-white" : "bg-white text-black"
       }`}
     >
       <div
-        className={`max-w-xl w-full p-8 rounded-2xl shadow-lg mt-[100px] transition-colors duration-300 ${
-          darkMode
-            ? "bg-gray-800 text-white border border-gray-700"
-            : "bg-white text-black"
+        className={`max-w-xl w-full p-8 rounded-2xl shadow-lg mt-[100px] ${
+          darkMode ? "bg-gray-800 text-white" : "bg-white text-black"
         }`}
       >
         <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 bg-clip-text text-transparent">
@@ -137,40 +137,32 @@ export default function AddService({ darkMode }) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="text"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="სერვისის სათაური"
-              className="w-full p-2 border rounded-md"
-            />
-            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
-          </div>
 
-          <div>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="აღწერა"
-              className="w-full p-2 border rounded-md"
-            />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
-          </div>
+          <input
+            type="text"
+            name="title"
+            value={form.title}
+            onChange={handleChange}
+            placeholder="სერვისის სათაური"
+            className="w-full p-2 border rounded-md"
+          />
 
-          <div>
-            <input
-              type="number"
-              name="price"
-              value={form.price}
-              onChange={handleChange}
-              placeholder="ფასი"
-              className="w-full p-2 border rounded-md"
-            />
-            {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
-          </div>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="აღწერა"
+            className="w-full p-2 border rounded-md"
+          />
+
+          <input
+            type="number"
+            name="price"
+            value={form.price}
+            onChange={handleChange}
+            placeholder="ფასი"
+            className="w-full p-2 border rounded-md"
+          />
 
           <select
             name="currency"
@@ -182,29 +174,31 @@ export default function AddService({ darkMode }) {
             <option value="EUR">EUR</option>
           </select>
 
-          <div>
-            <input
-              type="text"
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              placeholder="კატეგორია"
-              className="w-full p-2 border rounded-md"
-            />
-            {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
-          </div>
+          <input
+            type="text"
+            name="category"
+            value={form.category}
+            onChange={handleChange}
+            placeholder="კატეგორია"
+            className="w-full p-2 border rounded-md"
+          />
 
-          <div>
-            <input
-              type="text"
-              name="tags"
-              value={form.tags}
-              onChange={handleChange}
-              placeholder="ტეგები (გამიჯნე მძიმით)"
-              className="w-full p-2 border rounded-md"
-            />
-            {errors.tags && <p className="text-red-500 text-sm mt-1">{errors.tags}</p>}
-          </div>
+          <input
+            type="text"
+            name="tags"
+            value={form.tags}
+            onChange={handleChange}
+            placeholder="ტეგები (გამიჯნე მძიმით)"
+            className="w-full p-2 border rounded-md"
+          />
+
+          <input
+            type="file"
+            name="image_url"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="w-full p-2 border rounded-md"
+          />
 
           <button
             type="submit"

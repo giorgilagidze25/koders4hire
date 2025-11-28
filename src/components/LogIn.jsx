@@ -71,7 +71,7 @@ export default function LogIn({ darkMode }) {
           render: 'Login successful!',
           type: 'success',
           isLoading: false,
-          autoClose: 3000,
+          autoClose: 2000,
         });
 
         setTimeout(() => navigate('/profile'), 3000);
