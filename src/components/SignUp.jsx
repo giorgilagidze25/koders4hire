@@ -18,6 +18,7 @@ export default function SignUp({ darkMode }) {
   const hasToken = detectToken();
 
   useEffect(() => {
+    document.title='Sign Up | Koders4Hire'
     if (hasToken) {
       toast.info('You are already logged in');
       navigate('/profile');
