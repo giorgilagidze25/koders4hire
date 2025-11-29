@@ -217,6 +217,9 @@ export default function Profile({ darkMode }) {
         <button onClick={() => setActiveSection("danger")} className={`text-left py-2 ${activeSection === "danger" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Danger Zone</button>
         <button onClick={() => setActiveSection("receivedProposals")} className={`text-left py-2 ${activeSection === "receivedProposals" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Proposals Received</button>
         <button onClick={() => setActiveSection("sentProposals")} className={`text-left py-2 ${activeSection === "sentProposals" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>Proposals Sent</button>
+        <button onClick={() => {
+  window.location.href = `https://chat-k4h.vercel.app/login?token=${token}`;
+}} className={`text-left py-2 ${activeSection === "sentProposals" ? "text-blue-400 font-semibold" : "hover:text-blue-400"}`}>My chats</button>
       </div>
 
       <div className="flex-1 p-6 space-y-6">
@@ -292,7 +295,10 @@ export default function Profile({ darkMode }) {
                       This proposal was accepted,{" "}
                       <span
                         className="underline font-semibold cursor-pointer"
-                        onClick={() => navigate(`https://chat-k4h.vercel.app/chat/${p.chat._id}`)}
+                     onClick={() => {
+  window.location.href = `https://chat-k4h.vercel.app/login?token=${token}`;
+}}
+
                       >
                         click here to open the chat (Chat ID is {p.chat._id})
                       </span>
@@ -325,7 +331,10 @@ export default function Profile({ darkMode }) {
                     This proposal was accepted,{" "}
                     <span
                       className="underline font-semibold cursor-pointer"
-                      onClick={() => navigate(`https://chat-k4h.vercel.app/chat/${p.chat._id}`)}
+                      onClick={() => {
+  window.location.href = `https://chat-k4h.vercel.app/login?token=${token}`;
+}}
+
                     >
                       click here to open the chat (Chat ID is {p.chat._id})
                     </span>
