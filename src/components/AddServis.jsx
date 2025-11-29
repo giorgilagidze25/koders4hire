@@ -19,6 +19,7 @@ export default function AddService({ darkMode }) {
   const token = Cookies.get("token");
 
   useEffect(() => {
+    document.title = 'Create | Koders4Hire'
     const fetchUser = async () => {
       if (!token) return;
 
