@@ -24,6 +24,7 @@ export default function Profile({ darkMode }) {
 
     const fetchProfile = async () => {
       try {
+        document.title = 'Profile Management | Koders4Hire'
         const res = await fetch("https://api.k4h.dev/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
