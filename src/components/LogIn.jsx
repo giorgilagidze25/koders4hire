@@ -9,6 +9,7 @@ export default function LogIn({ darkMode }) {
   const location = useLocation();
 
   useEffect(() => {
+    document.title = 'Log In | Koders4Hire'
     const params = new URLSearchParams(location.search);
     const tokenFromQuery = params.get('token');
     const existingToken = Cookies.get('token');
