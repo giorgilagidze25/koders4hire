@@ -40,7 +40,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
   const token = Cookies.get("token");
 
   useEffect(() => {
-    document.title = 'Admin Dashboard | Koders4Hire
+    document.title = 'Admin Dashboard | Koders4Hire'
     const fetchMe = async () => {
       if (!token) return;
       try {
