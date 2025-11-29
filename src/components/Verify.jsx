@@ -9,6 +9,10 @@ export default function Verify() {
   const token = Cookies.get("token");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = 'Verify Email'
+  })
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!code.trim()) return setMessage("Please enter your verification code.");
