@@ -14,6 +14,7 @@ export default function Propose({ darkMode }) {
   const [formData, setFormData] = useState({ message: "", price: state?.price || 0 });
 
   useEffect(() => {
+    document.title = 'Send Proposal | Koders4Hire'
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
