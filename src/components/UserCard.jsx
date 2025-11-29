@@ -10,6 +10,7 @@ export default function UserCard({ darkMode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = `${username} | Koders4Hire`
     const fetchUserAndServices = async () => {
       try {
         const userRes = await fetch(`https://api.k4h.dev/users/${username}`);
