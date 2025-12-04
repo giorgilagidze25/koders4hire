@@ -107,20 +107,127 @@ export default function Servis({ darkMode }) {
           <h2 className={`text-4xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>ჩვენი სერვისები</h2>
           <button onClick={() => setFilterOpen(!filterOpen)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">ფილტრი</button>
         </div>
-        <div className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-800 shadow-lg p-6 transform transition-transform duration-300 z-50 ${filterOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>ფილტრი</h3>
-          <div className="space-y-3">
-            <input type="text" placeholder="კატეგორია" value={filters.category} onChange={e => setFilters({...filters, category: e.target.value})} className="w-full p-2 rounded border" />
-            <input type="text" placeholder="Tags (comma separated)" value={filters.tags} onChange={e => setFilters({...filters, tags: e.target.value})} className="w-full p-2 rounded border" />
-            <input type="number" placeholder="Min Price" value={filters.minPrice} onChange={e => setFilters({...filters, minPrice: e.target.value})} className="w-full p-2 rounded border" />
-            <input type="number" placeholder="Max Price" value={filters.maxPrice} onChange={e => setFilters({...filters, maxPrice: e.target.value})} className="w-full p-2 rounded border" />
-            <select value={filters.type} onChange={e => setFilters({...filters, type: e.target.value})} className="w-full p-2 rounded border">
-              <option value="">ყველა ტიპი</option>
-              <option value="request">Request</option>
-              <option value="offering">Offering</option>
-            </select>
-            <button onClick={handleFilter} className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">განახლება</button>
-          </div>
+<div
+  className={`fixed top-0 left-0 h-full w-80
+  bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl
+  shadow-2xl p-7 rounded-r-3xl
+  transform transition-transform duration-300 z-50
+  border-r border-gray-200/50 dark:border-gray-700/50
+  ${filterOpen ? "translate-x-0" : "-translate-x-full"}`}
+>
+  <button
+    onClick={() => setFilterOpen(false)}
+    className="absolute top-5 right-5 text-gray-600 dark:text-gray-300
+               hover:text-red-500 transition transform hover:scale-110"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" 
+      fill="none" viewBox="0 0 24 24" strokeWidth="1.8" 
+      stroke="currentColor" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" 
+        d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </button>
+
+  <h3
+    className={`text-3xl font-bold mb-8 tracking-wide
+    ${darkMode ? "text-white" : "text-gray-900"}`}
+  >
+    ფილტრი
+  </h3>
+
+  <div className="space-y-5">
+
+    <div>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        კატეგორია
+      </label>
+      <input
+        type="text"
+        placeholder="მაგ: website"
+        value={filters.category}
+        onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+        className="w-full p-3 mt-1 rounded-2xl border border-gray-300 dark:border-gray-700
+                   bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white
+                   focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+      />
+    </div>
+
+    <div>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        ტეგები
+      </label>
+      <input
+        type="text"
+        placeholder="მაგ: react"
+        value={filters.tags}
+        onChange={(e) => setFilters({ ...filters, tags: e.target.value })}
+        className="w-full p-3 mt-1 rounded-2xl border border-gray-300 dark:border-gray-700
+                   bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white
+                   focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+      />
+    </div>
+
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Min Price
+        </label>
+        <input
+          type="number"
+          placeholder="0"
+          value={filters.minPrice}
+          onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
+          className="w-full p-3 mt-1 rounded-2xl border border-gray-300 dark:border-gray-700
+                     bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white
+                     focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Max Price
+        </label>
+        <input
+          type="number"
+          placeholder="1000"
+          value={filters.maxPrice}
+          onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
+          className="w-full p-3 mt-1 rounded-2xl border border-gray-300 dark:border-gray-700
+                     bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white
+                     focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        ტიპი
+      </label>
+      <select
+        value={filters.type}
+        onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+        className="w-full p-3 mt-1 rounded-2xl border border-gray-300 dark:border-gray-700
+                   bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white
+                   focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+      >
+        <option value="">ყველა ტიპი</option>
+        <option value="request">Request</option>
+        <option value="offering">Offering</option>
+      </select>
+    </div>
+
+    <button
+      onClick={handleFilter}
+      className="w-full bg-green-600 text-white p-3 rounded-2xl
+                 hover:bg-green-700 transition font-semibold text-lg
+                 shadow-md hover:shadow-xl"
+    >
+      განახლება
+    </button>
+  </div>
+
+
+
         </div>
         {services.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-6">
