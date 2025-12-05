@@ -117,7 +117,6 @@ export default function Heder({ darkMode, setDarkMode }) {
                         სერვისის დამატება
                       </button>
 
-                      {/* Dashboard button for admin/owner/moderator */}
                       {["admin", "owner", "moderator"].includes(user.role) && (
                         <button
                           onClick={() => {
