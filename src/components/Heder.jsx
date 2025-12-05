@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import { Sun, Moon, User, Bell, ShoppingCart } from "lucide-react";
-import { useCart } from "../context/CartContext";
+import { Sun, Moon, User, Bell } from "lucide-react";
 
 export default function Heder({ darkMode, setDarkMode }) {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -10,7 +9,6 @@ export default function Heder({ darkMode, setDarkMode }) {
   const navigate = useNavigate();
   const token = Cookies.get("token");
   const isLoggedIn = !!token;
-  const { cart, updateQuantity, clearCart, removeFromCart } = useCart();
 
   useEffect(() => {
     if (!token) return;
@@ -29,15 +27,6 @@ export default function Heder({ darkMode, setDarkMode }) {
   const handleLogout = () => {
     Cookies.remove("token");
     navigate("/login");
-  };
-
-  const handleCheckout = async () => {
-    const req = await fetch("https://api.k4h.dev/redirect", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const res = await req.json();
-    if (req.ok) window.location.href = res.checkout_url;
   };
 
   const bannerHeight = 32;
@@ -66,99 +55,7 @@ export default function Heder({ darkMode, setDarkMode }) {
             {isLoggedIn && (
               <div className="relative">
                 <button
-                  onClick={() => setOpenDropdown(openDropdown === "cart" ? null : "cart")}
-                  className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 relative"
-                >
-                  <ShoppingCart className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-                  {cart.length > 0 && (
-                    <span className="absolute top-0 right-0 text-xs font-bold bg-red-600 text-white w-4 h-4 rounded-full flex items-center justify-center">
-                      {cart.reduce((acc, item) => acc + item.quantity, 0)}
-                    </span>
-                  )}
-                </button>
-
-                {openDropdown === "cart" && (
-                  <div
-                    className={`absolute right-0 mt-2 w-72 border rounded shadow-lg p-4 z-50 ${
-                      darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-                    }`}
-                  >
-                    {cart.length === 0 ? (
-                      <p className="text-center">კარტი ცარიელია</p>
-                    ) : (
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {cart
-                          .reduce((acc, item) => {
-                            const existingItem = acc.find(
-                              (i) => i.product._id === item.product._id
-                            );
-                            if (existingItem) {
-                              existingItem.quantity += item.quantity;
-                            } else {
-                              acc.push({ ...item });
-                            }
-                            return acc;
-                          }, [])
-                          .map((item) => (
-                            <div
-                              key={item.product._id}
-                              className="flex justify-between items-center border-b pb-1"
-                            >
-                              <div>
-                                <p className="font-semibold">{item.product.title}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-300">
-                                  {item.product.price}{" "}
-                                  {item.product.currency === "USD"
-                                    ? "$"
-                                    : item.product.currency === "EUR"
-                                    ? "€"
-                                    : item.product.currency}
-                                </p>
-                              </div>
-                              <div className="flex items-center">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                    updateQuantity(item.product._id, parseInt(e.target.value))
-                                  }
-                                  className="w-12 p-1 text-center rounded border"
-                                />
-                                <button
-                                  onClick={() => removeFromCart(item.product._id)}
-                                  className="ml-2 text-red-600 hover:text-red-800"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        <button
-                          onClick={handleCheckout}
-                          className="mt-2 w-full py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                        >
-                          Checkout
-                        </button>
-                        <button
-                          onClick={clearCart}
-                          className="mt-2 w-full py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                        >
-                          Clear Cart
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {isLoggedIn && (
-              <div className="relative">
-                <button
-                  onClick={() =>
-                    setOpenDropdown(openDropdown === "inbox" ? null : "inbox")
-                  }
+                  onClick={() => setOpenDropdown(openDropdown === "inbox" ? null : "inbox")}
                   className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
                   <Bell className="w-6 h-6 text-gray-700 dark:text-gray-200" />
@@ -219,6 +116,20 @@ export default function Heder({ darkMode, setDarkMode }) {
                       >
                         სერვისის დამატება
                       </button>
+
+                      {/* Dashboard button for admin/owner/moderator */}
+                      {["admin", "owner", "moderator"].includes(user.role) && (
+                        <button
+                          onClick={() => {
+                            navigate("/dashboard");
+                            setOpenDropdown(null);
+                          }}
+                          className="block px-4 py-2 w-full text-left hover:opacity-80 text-red-500"
+                        >
+                          Dashboard
+                        </button>
+                      )}
+
                       <button
                         onClick={() => {
                           handleLogout();
