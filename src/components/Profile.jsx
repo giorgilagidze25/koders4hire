@@ -160,7 +160,7 @@ export default function Profile({ darkMode }) {
         );
 
         if (res.chat && res.chat._id) {
-          navigate(`/chat/${res.chat._id}`);
+          window.location.href = `https://chat-k4h.vercel.app/chat/${res.chat._id}`
         }
       } else {
         toast.error(res.error || "Failed to approve proposal");
