@@ -107,6 +107,7 @@ export default function Servis({ darkMode }) {
           <h2 className={`text-4xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>ჩვენი სერვისები</h2>
           <button onClick={() => setFilterOpen(!filterOpen)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">ფილტრი</button>
         </div>
+        
 <div
   className={`fixed top-0 left-0 h-full w-80
   bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl
@@ -234,20 +235,88 @@ export default function Servis({ darkMode }) {
             {services.map(service => {
               const isOwner = currentUser && service.owner?._id === currentUser._id;
               return (
-                <div key={service._id} onClick={() => navigate(`/service/${service._id}`, { state: service })} className={`shadow-md rounded-2xl p-6 transform transition duration-300 hover:scale-105 hover:shadow-xl ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}>
-                  {service.image_url && <img src={service.image_url} alt={service.title} className="w-full h-48 object-cover rounded-xl mb-4" />}
-                  <h3 className="text-2xl font-semibold mb-2">{service.title}</h3>
-                  <p className="text-base mb-4">{service.description}</p>
-                  {service.type === "offering" && <p className={`font-semibold ${darkMode ? "text-yellow-400" : "text-green-600"}`}>ფასი: {service.price} {service.currency}</p>}
-                  <p className={`mt-1 text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>კატეგორია: {service.category}</p>
-                  <div className="flex justify-end mt-4 space-x-2">
-                    {isOwner && (
-                      <>
-                        <button onClick={e => { e.stopPropagation(); handleEdit(service); }} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">განახლება</button>
-                        <button onClick={e => { e.stopPropagation(); handleDelete(service._id); }} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">წაშლა</button>
-                      </>
-                    )}
-                  </div>
+               <div
+  key={service._id}
+  onClick={() =>
+    navigate(`/service/${service._id}`, { state: service })
+  }
+  className={`
+    cursor-pointer w-full
+    shadow-md rounded-2xl overflow-hidden
+    transform transition duration-300
+    hover:scale-105 hover:shadow-xl
+    min-w-[320px]
+    ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"}
+  `}
+>
+  {service.image_url && (
+    <img
+      src={service.image_url}
+      alt={service.title}
+      className="w-full h-48 object-cover"
+    />
+  )}
+
+  <div className="p-6">
+
+    <h3 className="text-2xl font-semibold mb-2">{service.title}</h3>
+
+    <p className="text-base mt-3 mb-4 break-words max-w-[400px]">
+      {service.description}
+    </p>
+
+    {service.type === "offering" && (
+      <p
+        className={`mt-2 font-semibold ${
+          darkMode ? "text-yellow-400" : "text-green-600"
+        }`}
+      >
+        ფასი: {service.price} {service.currency}
+      </p>
+    )}
+
+    <p
+      className={`mt-2 text-[17px] ${
+        darkMode ? "text-gray-300" : "text-black-700"
+      }`}
+    >
+      კატეგორია: {service.category}
+    </p>
+
+    <div className="flex justify-end mt-4 space-x-2">
+      {isOwner && (
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(service);
+            }}
+            className={`
+              px-4 py-2 rounded-lg font-semibold transition-colors duration-300
+              ${
+                darkMode
+                  ? "bg-gray-700 text-white hover:bg-gray-600"
+                  : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+              }
+            `}
+          >
+            განახლება
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(service._id);
+            }}
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+          >
+            წაშლა
+          </button>
+        </>
+      )}
+    </div>
+  </div>
+
                 </div>
               );
             })}
