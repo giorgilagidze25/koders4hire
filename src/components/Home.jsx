@@ -47,55 +47,46 @@ export default function Home({ darkMode }) {
         </p>
       </div>
 
-      <div className="max-w-screen-xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-10 p-8">
-        {data.map((item) => (
-          <div
-            key={item.id}
-            className={`cursor-pointer w-full shadow-md rounded-2xl overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl min-w-[320px] ${
-              darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
+<div className="max-w-screen-xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-10 p-8">
+  {data.map((item) => (
+    <div
+      key={item.id}
+      onClick={() => navigate(`/project/${item.id}`, { state: item })}
+      className={`cursor-pointer relative w-full shadow-md rounded-2xl overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl min-w-[320px] ${
+        darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
+      }`}
+    >
+      <div className="absolute inset-0 bg-blue-400/20 rounded-2xl scale-0 hover:scale-100 transition-transform duration-300 pointer-events-none"></div>
+
+      <img
+        src={item.image}
+        alt={item.name}
+        className="w-full h-48 object-cover"
+      />
+      <div className="p-6 relative z-10">
+        {item.stack && (
+          <p
+            className={`mt-2 text-[20px] ${
+              darkMode ? "text-gray-300" : "text-black-700"
             }`}
           >
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-6">
-              {item.stack && (
-                <p
-                  className={`mt-2 text-[20px] ${
-                    darkMode ? "text-gray-300" : "text-black-700"
-                  }`}
-                >
-                  {item.stack}
-                </p>
-              )}
-              <p
-                className={`mt-2 font-semibold ${
-                  darkMode ? "text-yellow-400" : "text-green-600"
-                }`}
-              >
-                ფასი: {item.price}
-              </p>
-              <h2 className="text-xl font-semibold">{item.name}</h2>
-              <p className="text-base mt-3">{item.description}</p>
-
-              <div className="mt-4">
-                <button
-                  onClick={() => openEditModal(item)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-300 ${
-                    darkMode
-                      ? "bg-gray-700 text-white hover:bg-gray-600"
-                      : "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                  }`}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+            {item.stack}
+          </p>
+        )}
+        <p
+          className={`mt-2 font-semibold ${
+            darkMode ? "text-yellow-400" : "text-green-600"
+          }`}
+        >
+          ფასი: {item.price}
+        </p>
+        <h2 className="text-xl font-semibold">{item.name}</h2>
+        <p className="text-base mt-3 ">{item.description}</p>
       </div>
+    </div>
+  ))}
+</div>
+
 
       <section
         id="about"

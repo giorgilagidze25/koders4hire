@@ -17,7 +17,7 @@ export default function CardDetail({ darkMode }) {
     );
 
   const handleMouseMove = (e) => {
-    const { left, top, width, height } = e.target.getBoundingClientRect();
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
     const x = ((e.pageX - left) / width) * 100;
     const y = ((e.pageY - top) / height) * 100;
     setBackgroundPosition(`${x}% ${y}%`);
@@ -25,13 +25,15 @@ export default function CardDetail({ darkMode }) {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-black"
-      } p-8`}
+      className={`min-h-screen transition-colors duration-300 px-4 py-12 ${
+        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+      }`}
     >
-      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-start gap-16 mt-32">
+      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
+        
+        {/* Image Section */}
         <div
-          className="relative w-[500px] h-[350px] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden cursor-zoom-in"
+          className="relative w-full lg:w-[500px] h-[350px] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden cursor-zoom-in"
           onMouseEnter={() => setIsZoomed(true)}
           onMouseLeave={() => setIsZoomed(false)}
           onMouseMove={handleMouseMove}
@@ -39,38 +41,44 @@ export default function CardDetail({ darkMode }) {
           <img
             src={card.image}
             alt={card.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 transform hover:scale-105"
           />
+
+          {isZoomed && (
+            <div
+              className="absolute inset-0 hidden lg:block rounded-2xl bg-no-repeat bg-cover shadow-2xl border border-gray-300 dark:border-gray-700"
+              style={{
+                backgroundImage: `url(${card.image})`,
+                backgroundPosition,
+                backgroundSize: "200%",
+                transition: "background-position 0.1s",
+              }}
+            />
+          )}
         </div>
 
-        {isZoomed ? (
-          <div
-            className="hidden lg:block w-[500px] h-[350px] rounded-2xl shadow-2xl border border-gray-300 dark:border-gray-700 bg-no-repeat bg-cover transition-all duration-150"
-            style={{
-              backgroundImage: `url(${card.image})`,
-              backgroundPosition,
-              backgroundSize: "200%",
-            }}
-          ></div>
-        ) : (
-          <div className="lg:w-1/2 flex flex-col justify-center gap-6 transition-opacity duration-300">
-            <h1 className="text-4xl font-extrabold">{card.title}</h1>
+        {/* Details Section */}
+        <div className="flex-1 flex flex-col justify-start gap-6">
+          <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight">
+            {card.title}
+          </h1>
 
-            <div className="space-y-3">
-              <p className="text-lg font-medium">
-                <span className="font-bold">ფასი:</span> {card.price}
-              </p>
-              <p className="text-lg font-medium">
-                <span className="font-bold">სტეკი:</span> {card.stack}
-              </p>
-              <p className="text-lg font-medium">
-                <span className="font-bold">ავტორი:</span> {card.author}
-              </p>
-            </div>
-
-            <p className="mt-4 leading-relaxed">{card.description}</p>
+          <div className="flex flex-col gap-2 text-lg font-medium">
+            <p>
+              <span className="font-bold">ფასი:</span> {card.price}
+            </p>
+            <p>
+              <span className="font-bold">სტეკი:</span> {card.stack}
+            </p>
+            <p>
+              <span className="font-bold">ავტორი:</span> {card.author}
+            </p>
           </div>
-        )}
+
+          <p className="mt-4 text-base leading-relaxed text-gray-700 dark:text-gray-300">
+            {card.description}
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -46,9 +46,19 @@ export default function Heder({ darkMode, setDarkMode }) {
       >
         <div className="flex justify-between items-center p-4 max-w-7xl mx-auto">
           <div className="flex items-center cursor-pointer" onClick={() => navigate("/")}>
-            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 drop-shadow-md hover:scale-105 transition-transform duration-300">
-              KODERS4HIRE
-            </h1>
+<h1
+  className="
+    text-3xl sm:text-4xl md:text-5xl lg:text-[45px] 
+    font-extrabold text-transparent bg-clip-text 
+    bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 
+    drop-shadow-md hover:scale-105 transition-transform duration-300
+    typing-effect
+  "
+>
+  KODERS4HIRE
+</h1>
+
+
           </div>
 
           <div className="flex items-center gap-4">

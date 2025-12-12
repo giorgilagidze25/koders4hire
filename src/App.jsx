@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import Cookies from "js-cookie";
@@ -17,6 +17,14 @@ import ServiceDetail from "./components/ServicDetail.";
 import Propose from "./components/Propose";
 // import Chat from "./components/Chat";
 import Verify from "./components/Verify";
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState(null);
@@ -62,36 +70,37 @@ function App() {
   };
 
   function VerifyGuard({ children }) {
-  const token = Cookies.get("token");
+    const token = Cookies.get("token");
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
+    if (!token) {
+      return <Navigate to="/login" replace />;
+    }
+
+    const [user, setUser] = useState(null);
+    useEffect(() => {
+      const fetchUser = async () => {
+        try {
+          const res = await fetch("https://api.k4h.dev/auth/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          setUser(data);
+        } catch {}
+      };
+      fetchUser();
+    }, [token]);
+
+    if (user && user.verification_status === "approved") {
+      return <Navigate to="/" replace />;
+    }
+
+    return children;
   }
-
-  const [user, setUser] = useState(null);
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("https://api.k4h.dev/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        setUser(data);
-      } catch {}
-    };
-    fetchUser();
-  }, [token]);
-
-  if (user && user.verification_status === "approved") {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}
 
   return (
     <div className={darkMode ? "bg-gray-900 text-white min-h-screen" : "bg-white text-black min-h-screen"}>
       <BrowserRouter>
+        <ScrollToTop /> {/* ScrollToTop ფუნქცია */}
         <ToastContainer />
         <Header darkMode={darkMode} setDarkMode={setDarkMode} />
         <div className="pt-20">
@@ -105,23 +114,8 @@ function App() {
             <Route path="/user/:username" element={<UserProfile />} />
             <Route path="/dashboard" element={<AdminProtectedRoute><Dashboard darkMode={darkMode} setDarkMode={setDarkMode} /></AdminProtectedRoute>} />
             <Route path="/service/:id" element={<ServiceDetail darkMode={darkMode} />} />
-            <Route path="/propose/:serviceId" element={<ProtectedRoute><Propose darkMode={darkMode} /></ProtectedRoute>}/>
-            {/* <Route
-  path="/chat/:chatId"
-  element={
-    <ProtectedRoute>
-      <Chat />
-    </ProtectedRoute>
-  }
-  /> */}
-         <Route
-  path="/verify"
-  element={
-    <VerifyGuard>
-      <Verify />
-    </VerifyGuard>
-  }
-/>
+            <Route path="/propose/:serviceId" element={<ProtectedRoute><Propose darkMode={darkMode} /></ProtectedRoute>} />
+            <Route path="/verify" element={<VerifyGuard><Verify /></VerifyGuard>} />
           </Routes>
         </div>
       </BrowserRouter>
