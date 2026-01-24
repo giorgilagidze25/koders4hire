@@ -85,7 +85,9 @@ export default function ServiceDetail({ darkMode }) {
         />
         <div>
           <p className="font-semibold">{service.owner.real_name}</p>
-          <p className="text-sm text-gray-500">@{service.owner.username}</p>
+          <a href={`http://k4h.dev/${service.owner.username}`} className="text-sm text-gray-500">
+  @{service.owner.username}
+</a>
         </div>
       </div>
     )}
